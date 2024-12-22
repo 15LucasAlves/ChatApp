@@ -11,9 +11,12 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.runtime.remember
+import com.example.chatapp.data.FirebaseRepository
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(onLogin: (String, String) -> Unit, onNavigateToRegister: () -> Unit) {
+    val scope = rememberCoroutineScope()
     val email = remember { mutableStateOf("") }
     val password = remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
@@ -39,13 +42,19 @@ fun LoginScreen(onLogin: (String, String) -> Unit, onNavigateToRegister: () -> U
         )
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = {
-            errorMessage = ""
-            if (email.value.isEmpty() || password.value.isEmpty()) {
-                errorMessage = "All fields are required"
-            } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email.value).matches()) {
-                errorMessage = "Invalid email format"
-            } else {
-                onLogin(email.value, password.value)
+            scope.launch {
+                errorMessage = ""
+                if (email.value.isEmpty() || password.value.isEmpty()) {
+                    errorMessage = "All fields are required"
+                } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email.value).matches()) {
+                    errorMessage = "Invalid email format"
+                } else {
+                    if (FirebaseRepository.loginUser(email.value, password.value)) {
+                        onLogin(email.value, password.value)
+                    } else {
+                        errorMessage = "Invalid email or password"
+                    }
+                }
             }
         }) {
             Text("Login")
@@ -55,7 +64,7 @@ fun LoginScreen(onLogin: (String, String) -> Unit, onNavigateToRegister: () -> U
             Text(text = errorMessage, color = MaterialTheme.colorScheme.error)
         }
         Spacer(modifier = Modifier.height(16.dp))
-        TextButton(onClick = { onNavigateToRegister() }) {
+        TextButton(onClick = onNavigateToRegister) {
             Text("Don't have an account? Register")
         }
     }
@@ -65,4 +74,4 @@ fun LoginScreen(onLogin: (String, String) -> Unit, onNavigateToRegister: () -> U
 @Composable
 fun PreviewLoginScreen() {
     LoginScreen(onLogin = { _, _ -> }, onNavigateToRegister = {})
-} 
+}
