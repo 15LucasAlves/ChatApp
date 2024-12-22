@@ -13,12 +13,8 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.runtime.remember
-import com.google.firebase.auth.FirebaseAuth
-import com.google.android.recaptcha.Recaptcha
-import com.google.android.recaptcha.RecaptchaAction
-import com.google.android.recaptcha.RecaptchaClient
-import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import com.example.chatapp.data.DatabaseManager
 
 @Composable
 fun RegisterScreen(onRegister: (String, String) -> Unit, onNavigateToLogin: () -> Unit) {
@@ -67,7 +63,7 @@ fun RegisterScreen(onRegister: (String, String) -> Unit, onNavigateToLogin: () -
                 } else if (password.value != confirmPassword.value) {
                     errorMessage = "Passwords do not match"
                 } else {
-                    if (FirebaseRepository.registerUser(email.value, password.value)) {
+                    if (DatabaseManager.registerUser(email.value, password.value)) {
                         onRegister(email.value, password.value)
                     } else {
                         errorMessage = "Email already registered"

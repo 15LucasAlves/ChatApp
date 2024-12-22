@@ -13,7 +13,6 @@ import com.example.chatapp.ui.theme.ChatAppTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContent {
             ChatAppTheme {
                 var isLoginScreen by remember { mutableStateOf(true) }

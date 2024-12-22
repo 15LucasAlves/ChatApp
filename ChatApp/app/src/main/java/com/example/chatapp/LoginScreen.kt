@@ -11,8 +11,8 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.runtime.remember
-import com.example.chatapp.data.FirebaseRepository
 import kotlinx.coroutines.launch
+import com.example.chatapp.data.DatabaseManager
 
 @Composable
 fun LoginScreen(onLogin: (String, String) -> Unit, onNavigateToRegister: () -> Unit) {
@@ -49,7 +49,7 @@ fun LoginScreen(onLogin: (String, String) -> Unit, onNavigateToRegister: () -> U
                 } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email.value).matches()) {
                     errorMessage = "Invalid email format"
                 } else {
-                    if (FirebaseRepository.loginUser(email.value, password.value)) {
+                    if (DatabaseManager.loginUser(email.value, password.value)) {
                         onLogin(email.value, password.value)
                     } else {
                         errorMessage = "Invalid email or password"
