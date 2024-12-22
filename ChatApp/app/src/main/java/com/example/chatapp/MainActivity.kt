@@ -7,8 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.chatapp.ui.theme.ChatAppTheme
@@ -19,29 +18,19 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ChatAppTheme {
+                var isLoginScreen by remember { mutableStateOf(true) }
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    if (isLoginScreen) {
+                        LoginScreen(onLogin = { email, password ->
+                            // Handle login logic here
+                        }, onNavigateToRegister = { isLoginScreen = false })
+                    } else {
+                        RegisterScreen(onRegister = { email, password ->
+                            // Handle registration logic here
+                        }, onNavigateToLogin = { isLoginScreen = true })
+                    }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    ChatAppTheme {
-        Greeting("Android")
     }
 }
