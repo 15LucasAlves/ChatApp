@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.chatapp"
-        minSdk = 25
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -72,4 +72,25 @@ dependencies {
 
     // Add Firebase Authentication
     implementation("com.google.firebase:firebase-auth-ktx")
+
+    // Add Firebase Firestore
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+
+    // Add this line for ViewModel Compose integration
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+
+    // Add these lines if not already present
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
+    implementation("androidx.compose.material3:material3:1.1.2")
+
+    // Add Coil for image loading
+    implementation("io.coil-kt:coil-compose:2.5.0")
+    
+    // Add Firebase Storage for image upload
+    implementation("com.google.firebase:firebase-storage-ktx")
+
+    // Add DataStore
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
 }
