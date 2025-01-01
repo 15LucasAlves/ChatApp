@@ -115,8 +115,14 @@ fun ProfileScreen(
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    Image(
-                        painter = painterResource(id = R.drawable.default_profile),
+                    val defaultProfileUrl =
+                        "https://firebasestorage.googleapis.com/v0/b/chatapp-e94d4.firebasestorage.app/o/profile_images%2Fdefault_user_profile_image.png?alt=media&token=f19d8620-dacc-438b-aa53-b47199d89640"
+                    // make sure the ?alt=media param is included so it returns the actual image
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(defaultProfileUrl)   // <-- fallback to your remote default
+                            .crossfade(true)
+                            .build(),
                         contentDescription = "Default profile picture",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop

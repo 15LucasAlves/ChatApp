@@ -1,5 +1,6 @@
 package com.example.chatapp.data.repository
 
+import android.util.Log
 import com.example.chatapp.data.model.User
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
@@ -39,6 +40,7 @@ class UserRepository {
     }
 
     suspend fun createUser(user: User) {
+        Log.e("Create user", "Inside create user function")
         try {
             usersCollection.document(user.email)
                 .set(user)

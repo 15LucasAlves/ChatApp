@@ -112,4 +112,62 @@ class MessageRepository {
             throw Exception("Failed to mark messages as read: ${e.message}")
         }
     }
+
+    fun editMessage(messageId: String, newText: String) {
+        // Example implementation for Firebase Firestore
+        val db = FirebaseFirestore.getInstance()
+        db.collection("messages")
+            .document(messageId)
+            .update("text", newText)
+            .addOnSuccessListener {
+                // Handle success if needed
+            }
+            .addOnFailureListener { e ->
+                throw Exception("Failed to edit message: ${e.message}")
+            }
+    }
+
+    fun deleteMessage(messageId: String) {
+        // Example implementation for Firebase Firestore
+        val db = FirebaseFirestore.getInstance()
+        db.collection("messages")
+            .document(messageId)
+            .delete()
+            .addOnSuccessListener {
+                // Handle success if needed
+            }
+            .addOnFailureListener { e ->
+                throw Exception("Failed to delete message: ${e.message}")
+            }
+    }
+
+    fun addMemberToGroup(groupId: String, email: String) {
+        // Example Firebase implementation
+        val db = FirebaseFirestore.getInstance()
+        val groupRef = db.collection("groups").document(groupId)
+
+        groupRef.update("members", FieldValue.arrayUnion(email))
+            .addOnSuccessListener {
+                // Successfully added member
+            }
+            .addOnFailureListener { e ->
+                throw Exception("Failed to add member: ${e.message}")
+            }
+    }
+
+    fun removeMemberFromGroup(groupId: String, email: String) {
+        // Example Firebase implementation
+        val db = FirebaseFirestore.getInstance()
+        val groupRef = db.collection("groups").document(groupId)
+
+        groupRef.update("members", FieldValue.arrayRemove(email))
+            .addOnSuccessListener {
+                // Successfully removed member
+            }
+            .addOnFailureListener { e ->
+                throw Exception("Failed to remove member: ${e.message}")
+            }
+    }
+
+
 }

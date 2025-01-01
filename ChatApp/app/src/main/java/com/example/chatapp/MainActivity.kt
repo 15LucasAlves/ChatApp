@@ -11,11 +11,10 @@ import androidx.lifecycle.lifecycleScope
 import com.example.chatapp.data.local.UserPreferences
 import com.example.chatapp.ui.auth.LoginScreen
 import com.example.chatapp.ui.auth.RegisterScreen
-import com.example.chatapp.ui.chat.ChatScreen
-import com.example.chatapp.ui.groups.GroupScreen
 import com.example.chatapp.ui.profile.ProfileScreen
 import com.example.chatapp.ui.users.UserSelectionScreen
 import com.example.chatapp.ui.theme.ChatAppTheme
+import com.example.chatapp.ui.chat.ChatScreen
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -105,16 +104,7 @@ class MainActivity : ComponentActivity() {
                                 isInitialSetup = true
                             )
                         }
-                        "groups" -> {
-                            GroupScreen(
-                                currentUserEmail = userEmail,
-                                onNavigateToChat = { groupId ->
-                                    recipientEmail = groupId
-                                    currentScreen = "chat"
-                                },
-                                onNavigateBack = { currentScreen = "userSelection" }
-                            )
-                        }
+
                     }
                 }
             }

@@ -22,9 +22,25 @@ class RegisterViewModel : ViewModel() {
             try {
                 _isLoading.value = true
                 _error.value = ""
-                
+
+                android.util.Log.e("Register View Model", "Inside register user function")
+
                 auth.createUserWithEmailAndPassword(email, password).await()
                 onComplete(true)
+
+                val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+
+                val newUserData = mapOf(
+                    "email" to email,
+                    "photoUrl" to "https://firebasestorage.googleapis.com/v0/b/chatapp-e94d4.firebasestorage.app/o/profile_images%2Fdefault_user_profile_image.png?alt=media&token=f19d8620-dacc-438b-aa53-b47199d89640",
+                    "username" to ""      // or "No username yet"
+                )
+
+                val set = db.collection("users")
+                    .document(email)
+                    .set(newUserData)
+
+
             } catch (e: Exception) {
                 _error.value = e.message ?: "Registration failed"
                 onComplete(false)

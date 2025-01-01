@@ -3,10 +3,14 @@ package com.example.chatapp.data.repository
 import com.example.chatapp.data.Result
 import com.example.chatapp.data.model.User
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 
 class AuthRepository {
     private val auth = FirebaseAuth.getInstance()
+    private val db = FirebaseFirestore.getInstance()
     private val userRepository = UserRepository()
 
     suspend fun login(email: String, password: String): Result<Unit> {
@@ -21,14 +25,27 @@ class AuthRepository {
     suspend fun register(email: String, password: String): Result<Unit> {
         return try {
             auth.createUserWithEmailAndPassword(email, password).await()
-            
+
             // Create user document in Firestore
             val user = User(
                 email = email,
                 createdAt = System.currentTimeMillis()
             )
             userRepository.createUser(user)
-            
+
+            try {
+                db.collection("users")
+                    .document(email)
+                    .set(user)
+                    .await()
+            } catch (e: Exception) {
+                android.util.Log.e("FirestoreError", "Could not create user doc", e)
+                // or update stateFlow with error
+            }
+
+            val userDocument = db.collection("users").document(auth.currentUser?.uid ?: "")
+            userDocument.set(user).await()
+
             Result.Success(Unit)
         } catch (e: Exception) {
             Result.Error(e)
@@ -40,4 +57,4 @@ class AuthRepository {
     }
 
     fun getCurrentUser() = auth.currentUser
-} 
+}

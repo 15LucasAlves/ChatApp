@@ -31,9 +31,20 @@ class ChatViewModel : ViewModel() {
     private var isVisible = false
     private var lastReadMessageId: String? = null
 
+    val currentUserEmail: String
+        get() = "user@example.com" // Replace with actual logic for fetching user email
+
     fun initChat(currentUserEmail: String, recipientEmail: String) {
-        currentChatId = repository.createChatId(currentUserEmail, recipientEmail)
+        currentChatId = createChatId(currentUserEmail, recipientEmail)
         loadMessages(initial = true)
+    }
+
+    fun createChatId(currentUserEmail: String, recipientEmail: String): String {
+        return if (currentUserEmail < recipientEmail) {
+            "$currentUserEmail-$recipientEmail"
+        } else {
+            "$recipientEmail-$currentUserEmail"
+        }
     }
 
     fun loadMessages(initial: Boolean = false) {
@@ -102,16 +113,6 @@ class ChatViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 _error.value = "Failed to send message: ${e.message}"
-            }
-        }
-    }
-
-    fun markMessageAsRead(messageId: String) {
-        viewModelScope.launch {
-            try {
-                repository.markMessageAsRead(messageId)
-            } catch (e: Exception) {
-                // Silently fail for read receipts
             }
         }
     }
@@ -185,4 +186,4 @@ class ChatViewModel : ViewModel() {
             }
         }
     }
-} 
+}
