@@ -1,3 +1,4 @@
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 package com.example.chatapp.ui.chat
 
 import android.net.Uri
@@ -20,6 +21,8 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.DoneAll
+import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -39,7 +42,6 @@ import com.example.chatapp.util.DateFormatter
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ChatScreen(
     userEmail: String,
@@ -48,7 +50,7 @@ fun ChatScreen(
     viewModel: ChatViewModel = viewModel()
 ) {
     var messageText by remember { mutableStateOf("") }
-    var selectedMessage by remember { mutableStateOf<Message?>(null)
+    var selectedMessage by remember { mutableStateOf<Message?>(null) }
     var isEditing by remember { mutableStateOf(false) }
     val messages by viewModel.messages.collectAsState()
     val error by viewModel.error.collectAsState()
@@ -143,7 +145,21 @@ fun ChatScreen(
         }
     }
 }
-    }
+
+@Composable
+fun ChatTopBar(
+    recipientEmail: String,
+    onNavigateBack: () -> Unit
+) {
+    TopAppBar(
+        title = { Text(text = recipientEmail) },
+        navigationIcon = {
+            IconButton(onClick = onNavigateBack) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Navigate Back")
+            }
+        }
+    )
+}
 
 @Composable
 fun ChatMessageItem(
@@ -187,13 +203,13 @@ fun ChatMessageItem(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                 }
-                
+
                 Text(
                     text = message.text,
                     color = Color.White,
                     textAlign = if (isOwnMessage) TextAlign.End else TextAlign.Start
                 )
-                
+
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -205,14 +221,14 @@ fun ChatMessageItem(
                     )
                     if (isOwnMessage) {
                         Icon(
-                            imageVector = if (message.readBy.size > 1) 
-                                Icons.Default.DoneAll 
-                            else 
+                            imageVector = if (message.readBy.size > 1)
+                                Icons.Default.DoneAll
+                            else
                                 Icons.Default.Done,
                             contentDescription = if (message.readBy.size > 1) "Read" else "Sent",
-                            tint = if (message.readBy.size > 1) 
+                            tint = if (message.readBy.size > 1)
                                 Color.Blue.copy(alpha = 0.7f)
-                            else 
+                            else
                                 Color.White.copy(alpha = 0.7f),
                             modifier = Modifier.size(16.dp)
                         )
@@ -240,14 +256,14 @@ fun MessageActionsBottomSheet(
             if (isOwnMessage) {
                 ListItem(
                     headlineContent = { Text("Edit Message") },
-                    leadingContent = { 
+                    leadingContent = {
                         Icon(Icons.Default.Edit, contentDescription = null)
                     },
                     modifier = Modifier.clickable(onClick = onEdit)
                 )
                 ListItem(
                     headlineContent = { Text("Delete Message") },
-                    leadingContent = { 
+                    leadingContent = {
                         Icon(Icons.Default.Delete, contentDescription = null)
                     },
                     modifier = Modifier.clickable(onClick = onDelete)
@@ -255,7 +271,7 @@ fun MessageActionsBottomSheet(
             }
             ListItem(
                 headlineContent = { Text("Copy Text") },
-                leadingContent = { 
+                leadingContent = {
                     Icon(Icons.Default.ContentCopy, contentDescription = null)
                 },
                 modifier = Modifier.clickable {
@@ -283,13 +299,13 @@ fun MessageInput(
         IconButton(onClick = onAttachClick) {
             Icon(Icons.Default.AttachFile, contentDescription = "Attach")
         }
-        
+
         TextField(
             value = messageText,
             onValueChange = onMessageChange,
             modifier = Modifier.weight(1f),
-            placeholder = { 
-                Text(if (isEditing) "Edit message..." else "Type a message") 
+            placeholder = {
+                Text(if (isEditing) "Edit message..." else "Type a message")
             },
             colors = TextFieldDefaults.colors(
                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,
