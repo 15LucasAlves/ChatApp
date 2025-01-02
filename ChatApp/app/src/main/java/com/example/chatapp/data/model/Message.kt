@@ -13,4 +13,4 @@ data class Message(
     val readBy: List<String> = emptyList(),
     val isGroupMessage: Boolean = false,
     val groupId: String? = null
-) 
+)

@@ -19,6 +19,7 @@ class UserSelectionViewModel : ViewModel() {
 
     private var allUsers: List<User> = listOf()
 
+    //function that looks up all the users that belong to collection "users" in firebase database
     fun loadUsers(currentUserEmail: String) {
         viewModelScope.launch {
             try {
@@ -32,6 +33,7 @@ class UserSelectionViewModel : ViewModel() {
         }
     }
 
+    //simple query that searches for matches between search in the username and email
     fun searchUsers(query: String) {
         if (query.isEmpty()) {
             _users.value = allUsers

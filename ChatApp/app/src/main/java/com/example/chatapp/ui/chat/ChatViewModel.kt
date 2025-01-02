@@ -43,6 +43,8 @@ class ChatViewModel : ViewModel() {
         Log.d("ChatViewModel", "User email updated: $email")
     }
 
+    //similarly fetches recipient email from userselectionscreen when user is selected
+    //and sets it as the recipientemail
     private val _currentRecipientEmail = mutableStateOf("")
     val recipientEmail : String get() = _currentRecipientEmail.value
 
@@ -51,17 +53,17 @@ class ChatViewModel : ViewModel() {
         Log.d("ChatViewModel", "Recipient email updated: $email")
     }
 
+    val uniqueId = listOf(currentUserEmail,recipientEmail).sorted()
+
     fun initChat(currentUserEmail: String, recipientEmail: String) {
         currentChatId = createChatId(currentUserEmail, recipientEmail)
         loadMessages(initial = true)
     }
 
+    //instead of creating the id by length of users, id always has the same format
+    //that being current user first - recipient user second for ease of use
     fun createChatId(currentUserEmail: String, recipientEmail: String): String {
-        return if (currentUserEmail < recipientEmail) {
-            "$currentUserEmail-$recipientEmail"
-        } else {
-            "$recipientEmail-$currentUserEmail"
-        }
+        return "$currentUserEmail-$recipientEmail"
     }
 
     fun loadMessages(initial: Boolean = false) {
@@ -127,6 +129,7 @@ class ChatViewModel : ViewModel() {
                         timestamp = System.currentTimeMillis(),
                         chatId = chatId
                     )
+                    Log.d("chatviewmodel","sentmessage: ${message.text}")
                     repository.sendMessage(message)
                 }
             } catch (e: Exception) {
