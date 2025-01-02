@@ -1,9 +1,12 @@
 package com.example.chatapp.ui.users
 
+import android.media.Image
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,6 +19,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.chatapp.data.model.User
 import com.example.chatapp.ui.chat.ChatViewModel
 import  androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.ui.AbsoluteAlignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
+import coil.compose.rememberAsyncImagePainter
+import coil.compose.rememberImagePainter
 
 @Composable
 fun UserSelectionScreen(
@@ -100,6 +108,7 @@ private fun UserItem(user: User, onClick: () -> Unit) {
         Column(
             modifier = Modifier
                 .padding(16.dp)
+                .align(Alignment.CenterHorizontally),
         ) {
             Text(
                 text = user.username ?: user.email,
@@ -109,6 +118,21 @@ private fun UserItem(user: User, onClick: () -> Unit) {
                 Text(
                     text = user.email,
                     style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
+        Column(
+            modifier = Modifier
+                .absolutePadding(0.dp,0.dp,50.dp,0.dp)
+        ){
+            user.photoUrl?.let { imageUrl ->
+                Image(
+                    painter = rememberAsyncImagePainter(imageUrl),
+                    contentDescription = "Userpic",
+                    modifier = Modifier
+                        .size(60.dp)
+                        .clip(RectangleShape) //so it's a rectangle pic
+                        .align(Alignment.CenterHorizontally)
                 )
             }
         }
