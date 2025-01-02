@@ -10,12 +10,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.chatapp.data.model.User
+import com.example.chatapp.ui.chat.ChatViewModel
 
 @Composable
 fun UserSelectionScreen(
+    modifier: Modifier = Modifier,
     currentUserEmail: String,
     viewModel: UserSelectionViewModel = viewModel(),
     onUserSelected: (String) -> Unit,
+    chatViewModel: ChatViewModel = viewModel(),
     onNavigateToProfile: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
@@ -63,7 +66,9 @@ fun UserSelectionScreen(
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
             items(users) { user ->
-                UserItem(user = user, onClick = { onUserSelected(user.email) })
+                UserItem(user = user, onClick = { onUserSelected(user.email)
+                    chatViewModel.setRecipientEmail(user.email)
+                chatViewModel.setUserEmail(currentUserEmail)})
             }
         }
     }

@@ -4,6 +4,7 @@ data class Message(
     val id: String = "",
     val text: String = "",
     val senderEmail: String = "",
+    val recipientEmail: String = "",
     val timestamp: Long = 0,
     val chatId: String = "",
     val imageUrl: String? = null,

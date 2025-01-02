@@ -1,6 +1,8 @@
 package com.example.chatapp.ui.chat
 
 import android.net.Uri
+import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.chatapp.data.model.Message
@@ -12,7 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 class ChatViewModel : ViewModel() {
-    private val repository = MessageRepository()
+    val repository = MessageRepository()
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
     val messages: StateFlow<List<Message>> = _messages
 
@@ -31,8 +33,23 @@ class ChatViewModel : ViewModel() {
     private var isVisible = false
     private var lastReadMessageId: String? = null
 
-    val currentUserEmail: String
-        get() = "user@example.com" // Replace with actual logic for fetching user email
+    //fetches email from userselectionscreen when user is selected
+    //and sets it as the currentuseremail
+    private val _currentUserEmail = mutableStateOf("")
+    val currentUserEmail: String get() = _currentUserEmail.value
+
+    fun setUserEmail(email: String) {
+        _currentUserEmail.value = email
+        Log.d("ChatViewModel", "User email updated: $email")
+    }
+
+    private val _currentRecipientEmail = mutableStateOf("")
+    val recipientEmail : String get() = _currentRecipientEmail.value
+
+    fun setRecipientEmail(email: String){
+        _currentRecipientEmail.value = email
+        Log.d("ChatViewModel", "Recipient email updated: $email")
+    }
 
     fun initChat(currentUserEmail: String, recipientEmail: String) {
         currentChatId = createChatId(currentUserEmail, recipientEmail)
@@ -98,7 +115,7 @@ class ChatViewModel : ViewModel() {
         loadMessages(initial = false)
     }
 
-    fun sendMessage(text: String, senderEmail: String) {
+    fun sendMessage(text: String, senderEmail: String, receiverEmail: String) {
         viewModelScope.launch {
             try {
                 _error.value = ""
@@ -106,6 +123,7 @@ class ChatViewModel : ViewModel() {
                     val message = Message(
                         text = text,
                         senderEmail = senderEmail,
+                        recipientEmail = receiverEmail,
                         timestamp = System.currentTimeMillis(),
                         chatId = chatId
                     )

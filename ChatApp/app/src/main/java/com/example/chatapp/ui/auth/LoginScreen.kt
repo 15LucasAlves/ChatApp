@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun LoginScreen(
+    modifier: Modifier = Modifier,
     onLogin: (email: String, password: String) -> Unit,
     onNavigateToRegister: () -> Unit
 ) {

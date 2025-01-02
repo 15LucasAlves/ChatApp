@@ -28,6 +28,7 @@ import com.example.chatapp.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
+    modifier: Modifier = Modifier,
     email: String,
     isInitialSetup: Boolean = false,
     onNavigateBack: () -> Unit,

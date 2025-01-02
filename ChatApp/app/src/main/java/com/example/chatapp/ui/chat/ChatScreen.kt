@@ -41,9 +41,11 @@ import com.example.chatapp.data.model.Message
 import com.example.chatapp.util.DateFormatter
 import java.text.SimpleDateFormat
 import java.util.*
+import com.example.chatapp.data.repository.MessageRepository
 
 @Composable
 fun ChatScreen(
+    modifier: Modifier = Modifier,
     userEmail: String,
     recipientEmail: String,
     onNavigateBack: () -> Unit,
@@ -130,12 +132,13 @@ fun ChatScreen(
                 onMessageChange = { messageText = it },
                 onSendClick = {
                     if (messageText.isNotEmpty()) {
+                        viewModel.initChat(userEmail, recipientEmail)
                         if (isEditing && selectedMessage != null) {
                             viewModel.editMessage(selectedMessage!!.id, messageText)
                             isEditing = false
                             selectedMessage = null
                         } else {
-                            viewModel.sendMessage(messageText, userEmail)
+                            viewModel.sendMessage(messageText, userEmail, recipientEmail)
                         }
                         messageText = ""
                     }

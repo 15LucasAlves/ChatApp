@@ -11,6 +11,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun RegisterScreen(
+    modifier: Modifier = Modifier,
     onRegister: (email: String, password: String) -> Unit,
     onNavigateToLogin: () -> Unit,
     viewModel: RegisterViewModel = viewModel()

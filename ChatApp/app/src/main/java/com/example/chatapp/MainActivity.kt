@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -46,6 +47,7 @@ class MainActivity : ComponentActivity() {
                     when (currentScreen) {
                         "login" -> {
                             LoginScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 onLogin = { email, password ->
                                     userEmail = email
                                     // Save credentials
@@ -59,6 +61,7 @@ class MainActivity : ComponentActivity() {
                         }
                         "profile" -> {
                             ProfileScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 email = userEmail,
                                 onNavigateBack = { currentScreen = "userSelection" },
                                 isInitialSetup = false,
@@ -73,6 +76,7 @@ class MainActivity : ComponentActivity() {
                         }
                         "userSelection" -> {
                             UserSelectionScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 currentUserEmail = userEmail,
                                 onUserSelected = { selectedUserEmail ->
                                     recipientEmail = selectedUserEmail
@@ -83,6 +87,7 @@ class MainActivity : ComponentActivity() {
                         }
                         "chat" -> {
                             ChatScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 userEmail = userEmail,
                                 recipientEmail = recipientEmail,
                                 onNavigateBack = { currentScreen = "userSelection" }
@@ -90,6 +95,7 @@ class MainActivity : ComponentActivity() {
                         }
                         "register" -> {
                             RegisterScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 onRegister = { email, _ ->
                                     userEmail = email
                                     currentScreen = "userDetails"
@@ -99,6 +105,7 @@ class MainActivity : ComponentActivity() {
                         }
                         "userDetails" -> {
                             ProfileScreen(
+                                modifier = Modifier.padding(innerPadding),
                                 email = userEmail,
                                 onNavigateBack = { currentScreen = "login" },
                                 isInitialSetup = true

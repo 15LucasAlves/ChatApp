@@ -79,7 +79,7 @@ class MessageRepository {
 
     suspend fun sendMessage(message: Message) {
         try {
-            messagesCollection.add(message.copy(readBy = listOf(message.senderEmail))).await()
+            messagesCollection.add(message.copy(readBy = listOf(message.recipientEmail))).await()
         } catch (e: Exception) {
             throw Exception("Failed to send message: ${e.message}")
         }
@@ -113,6 +113,7 @@ class MessageRepository {
         }
     }
 
+    //crashes if used
     fun editMessage(messageId: String, newText: String) {
         // Example implementation for Firebase Firestore
         val db = FirebaseFirestore.getInstance()
