@@ -1,8 +1,10 @@
 package com.example.chatapp.data.repository
 
+import android.util.Log
 import com.example.chatapp.data.Result
 import com.example.chatapp.data.model.User
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import com.google.firebase.firestore.ktx.firestore
@@ -12,6 +14,7 @@ class AuthRepository {
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
     private val userRepository = UserRepository()
+
 
     suspend fun login(email: String, password: String): Result<Unit> {
         return try {

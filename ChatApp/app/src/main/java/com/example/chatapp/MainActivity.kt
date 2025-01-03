@@ -1,6 +1,7 @@
 package com.example.chatapp
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -48,13 +49,19 @@ class MainActivity : ComponentActivity() {
                         "login" -> {
                             LoginScreen(
                                 modifier = Modifier.padding(innerPadding),
-                                onLogin = { email, password ->
+                                onLogin = { email, password, loginResult ->
                                     userEmail = email
-                                    // Save credentials
-                                    lifecycleScope.launch {
-                                        userPreferences.saveUserCredentials(email, password)
+                                    if(loginResult){
+                                        Log.e("Main", "passed")
+                                        // Save credentials
+                                        lifecycleScope.launch {
+                                            userPreferences.saveUserCredentials(email, password)
+                                        }
+                                        currentScreen = "userSelection"
+                                    }else{
+                                        Log.e("Main", "failed")
+                                        currentScreen = "login"
                                     }
-                                    currentScreen = "userSelection"
                                 },
                                 onNavigateToRegister = { currentScreen = "register" }
                             )

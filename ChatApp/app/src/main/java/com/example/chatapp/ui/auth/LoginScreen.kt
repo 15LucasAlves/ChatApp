@@ -7,16 +7,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.example.chatapp.data.Result
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.chatapp.ui.chat.ChatViewModel
 
 @Composable
 fun LoginScreen(
     modifier: Modifier = Modifier,
-    onLogin: (email: String, password: String) -> Unit,
+    onLogin: (email: String, password: String, loginResult: Boolean) -> Unit,
+    loginViewModel: LoginViewModel = viewModel(),
     onNavigateToRegister: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
+    var loginResult by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -60,7 +65,11 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         Button(
-            onClick = { onLogin(email, password) },
+            onClick = { onLogin(email, password, loginResult)
+                      loginViewModel.login(email, password, onSuccess = {
+                          loginResult = true
+                      })
+                      },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Login")
