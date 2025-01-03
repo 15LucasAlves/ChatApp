@@ -1,9 +1,7 @@
 @file:OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 package com.example.chatapp.ui.chat
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import android.widget.Toast
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -35,7 +33,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -48,6 +48,7 @@ import com.example.chatapp.util.DateFormatter
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+
 
 @Composable
 fun ChatScreen(
@@ -335,6 +336,9 @@ fun MessageActionsBottomSheet(
     onDelete: () -> Unit,
     onEdit: () -> Unit
 ) {
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
+
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
             modifier = Modifier
@@ -362,9 +366,11 @@ fun MessageActionsBottomSheet(
                 leadingContent = {
                     Icon(Icons.Default.ContentCopy, contentDescription = null)
                 },
-                modifier = Modifier.clickable {
-                    // Implement copy to clipboard
-                }
+                modifier = Modifier.clickable(onClick ={
+                    val copiedtext = message.text
+                    clipboardManager.setText(AnnotatedString(copiedtext))
+                    Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_LONG).show()
+                })
             )
         }
     }
