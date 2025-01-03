@@ -70,7 +70,7 @@ class ChatViewModel : ViewModel() {
         setRecipientEmail(recipientEmail)
         currentChatId = createChatId(currentUserEmail, recipientEmail)
         Log.d(TAG, "Chat initialized with chatId: $currentChatId")
-        loadMessages(initial = true)
+        loadMessages(true)
     }
 
     /**
@@ -80,7 +80,14 @@ class ChatViewModel : ViewModel() {
         setUserEmail(currentUserEmail)
         currentGroupId = groupId
         Log.d(TAG, "Group chat initialized with groupId: $groupId")
-        loadGroupMessages(initial = true)
+        loadGroupMessages(true)
+    }
+
+    /**
+     * Clear message list
+     */
+    fun clearMessageList(){
+        _messages.value = emptyList()
     }
 
     /**
@@ -99,10 +106,10 @@ class ChatViewModel : ViewModel() {
      * Loads messages for an individual chat.
      */
     fun loadMessages(initial: Boolean = false) {
-        if (_isLoading.value) {
+        /*if (_isLoading.value) {
             Log.d(TAG, "loadMessages called but already loading. Exiting.")
             return
-        }
+        }*/
 
         viewModelScope.launch {
             try {

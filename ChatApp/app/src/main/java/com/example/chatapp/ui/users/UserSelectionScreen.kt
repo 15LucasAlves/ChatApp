@@ -72,8 +72,9 @@ fun UserSelectionScreen(
         ) {
             items(users) { user ->
                 UserItem(user = user, onClick = { onUserSelected(user.email)
+                    chatViewModel.initChat(currentUserEmail, user.email)
                     chatViewModel.setRecipientEmail(user.email)
-                chatViewModel.setUserEmail(currentUserEmail)})
+                chatViewModel.setUserEmail(currentUserEmail) })
             }
         }
     }

@@ -51,6 +51,7 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.padding(innerPadding),
                                 onLogin = { email, password, loginResult ->
                                     userEmail = email
+                                    //this if basically checks if the login was successful or not with a bool
                                     if(loginResult){
                                         Log.e("Main", "passed")
                                         // Save credentials

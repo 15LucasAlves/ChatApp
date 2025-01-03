@@ -132,7 +132,7 @@ fun ChatScreen(
                 onMessageChange = { messageText = it },
                 onSendClick = {
                     if (messageText.isNotEmpty()) {
-                        viewModel.initChat(userEmail, recipientEmail)
+                        //viewModel.initChat(userEmail, recipientEmail)
                         if (isEditing && selectedMessage != null) {
                             viewModel.editMessage(selectedMessage!!.id, messageText)
                             isEditing = false
@@ -152,12 +152,14 @@ fun ChatScreen(
 @Composable
 fun ChatTopBar(
     recipientEmail: String,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    viewModel: ChatViewModel = viewModel()
 ) {
     TopAppBar(
         title = { Text(text = recipientEmail) },
         navigationIcon = {
-            IconButton(onClick = onNavigateBack) {
+            IconButton(onClick = { onNavigateBack()
+                viewModel.clearMessageList()}) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Navigate Back")
             }
         }
