@@ -3,11 +3,13 @@ package com.example.chatapp.ui.users
 import android.media.Image
 import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -56,7 +58,7 @@ fun UserSelectionScreen(
 
         TextField(
             value = searchQuery,
-            onValueChange = { 
+            onValueChange = {
                 searchQuery = it
                 viewModel.searchUsers(it)
             },
@@ -110,10 +112,9 @@ private fun UserItem(
     currentUserEmail: String,
     onClick: () -> Unit,
     viewModel: UserSelectionViewModel = viewModel(),
-    ) {
-
+) {
     val repository = MessageRepository()
-    val chatId = viewModel.chatId(currentUserEmail,user.email)
+    val chatId = viewModel.chatId(currentUserEmail, user.email)
     Log.d("userslec", "$chatId")
     val messages = repository.fetchLastMessage(chatId).collectAsState(initial = Result.Loading)
 
@@ -121,52 +122,66 @@ private fun UserItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clickable(onClick = onClick)
+            .clickable(onClick = onClick),
+        shape = MaterialTheme.shapes.medium // Matches the card's border radius
     ) {
-        Column(
+        Row(
             modifier = Modifier
-                .padding(16.dp)
-                .align(Alignment.CenterHorizontally),
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically // Align items vertically
         ) {
-            Text(
-                text = user.username ?: user.email,
-                style = MaterialTheme.typography.titleMedium
-            )
-            if (user.username != null) {
-                Text(
-                    text = user.email,
-                    style = MaterialTheme.typography.bodyMedium
+            // User Image
+            Box(
+                modifier = Modifier
+                    .size(64.dp) // Larger image size
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp)) // Apply proper border radius
+                    .background(MaterialTheme.colorScheme.surface) // Optional: Add background color
+            ) {
+                user.photoUrl?.let { imageUrl ->
+                    Image(
+                        painter = rememberAsyncImagePainter(imageUrl),
+                        contentDescription = "Userpic",
+                        modifier = Modifier.fillMaxSize() // Ensures image fits the container
+                    )
+                } ?: Icon(
+                    imageVector = Icons.Default.AccountCircle,
+                    contentDescription = "Default User Icon",
+                    modifier = Modifier.fillMaxSize() // Ensures icon fits the container
                 )
             }
-            when (val result = messages.value) {
-                is Result.Loading -> {
-                    Text(text = "Loading...", style = MaterialTheme.typography.bodySmall)
-                }
-                is Result.Error -> {
-                    Text(text = "Error fetching message", style = MaterialTheme.typography.bodySmall)
-                }
-                is Result.Success -> {
-                    val lastMessage = result.data.firstOrNull()
+
+            Spacer(modifier = Modifier.width(16.dp)) // Space between image and text
+
+            // Texts
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = user.username ?: user.email,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                if (user.username != null) {
                     Text(
-                        text = lastMessage?.text ?: "No messages yet",
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = user.email,
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
-            }
-        }
-        Column(
-            modifier = Modifier
-                .absolutePadding(0.dp,0.dp,50.dp,0.dp)
-        ){
-            user.photoUrl?.let { imageUrl ->
-                Image(
-                    painter = rememberAsyncImagePainter(imageUrl),
-                    contentDescription = "Userpic",
-                    modifier = Modifier
-                        .size(60.dp)
-                        .clip(RectangleShape) //so it's a rectangle pic
-                        .align(Alignment.CenterHorizontally)
-                )
+                when (val result = messages.value) {
+                    is Result.Loading -> {
+                        Text(text = "Loading...", style = MaterialTheme.typography.bodySmall)
+                    }
+                    is Result.Error -> {
+                        Text(text = "Error fetching message", style = MaterialTheme.typography.bodySmall)
+                    }
+                    is Result.Success -> {
+                        val lastMessage = result.data.firstOrNull()
+                        Text(
+                            text = lastMessage?.text ?: "No messages yet",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
             }
         }
     }
