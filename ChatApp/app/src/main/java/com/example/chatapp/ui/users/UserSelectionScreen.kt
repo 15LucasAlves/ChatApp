@@ -24,6 +24,8 @@ import com.example.chatapp.ui.chat.ChatViewModel
 import com.example.chatapp.data.Result
 import com.example.chatapp.data.repository.MessageRepository
 import  androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
@@ -64,7 +66,10 @@ fun UserSelectionScreen(
                 viewModel.searchUsers(it)
             },
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Search users...") }
+            placeholder = { Text("Search users...") },
+            leadingIcon = {
+                Icon(Icons.Default.Search, contentDescription = "search")
+            }
         )
 
         if (error.isNotEmpty()) {
