@@ -27,6 +27,7 @@ import  androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.layout.ContentScale
 import coil.compose.rememberAsyncImagePainter
 import coil.compose.rememberImagePainter
 import com.example.chatapp.data.model.Message
@@ -135,14 +136,15 @@ private fun UserItem(
             Box(
                 modifier = Modifier
                     .size(64.dp) // Larger image size
-                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp)) // Apply proper border radius
+                    .clip(RoundedCornerShape(16.dp)) // Apply proper border radius
                     .background(MaterialTheme.colorScheme.surface) // Optional: Add background color
             ) {
                 user.photoUrl?.let { imageUrl ->
                     Image(
                         painter = rememberAsyncImagePainter(imageUrl),
                         contentDescription = "Userpic",
-                        modifier = Modifier.fillMaxSize() // Ensures image fits the container
+                        modifier = Modifier.fillMaxSize(), // Ensures image fits the container
+                        contentScale = ContentScale.Crop // Maintains aspect ratio while filling the container
                     )
                 } ?: Icon(
                     imageVector = Icons.Default.AccountCircle,
