@@ -5,6 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.chatapp.data.Result
@@ -22,6 +23,8 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
     var loginResult by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
 
     Column(
         modifier = Modifier
@@ -68,13 +71,22 @@ fun LoginScreen(
             onClick = { onLogin(email, password, loginResult)
                       loginViewModel.login(email, password, onSuccess = {
                           loginResult = true
+                      }, onFailure = {
+                          errorMessage = "Authentication failed, incorrect email or password. Try Again."
+                          loginResult = false
                       })
                       },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Login")
         }
-
+        if (errorMessage?.isNotEmpty() == true) {
+            Text(
+                text = errorMessage!!,
+                color = Color.Red,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
         TextButton(
             onClick = onNavigateToRegister,
             modifier = Modifier.padding(top = 8.dp)

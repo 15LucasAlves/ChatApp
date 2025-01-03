@@ -1,6 +1,7 @@
 package com.example.chatapp.ui.users
 
 import android.media.Image
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -18,12 +19,17 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.chatapp.data.model.User
 import com.example.chatapp.ui.chat.ChatViewModel
+import com.example.chatapp.data.Result
+import com.example.chatapp.data.repository.MessageRepository
 import  androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
 import coil.compose.rememberAsyncImagePainter
 import coil.compose.rememberImagePainter
+import com.example.chatapp.data.model.Message
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun UserSelectionScreen(
@@ -71,7 +77,7 @@ fun UserSelectionScreen(
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
             items(users) { user ->
-                UserItem(user = user, onClick = { onUserSelected(user.email)
+                UserItem(user = user, currentUserEmail, onClick = { onUserSelected(user.email)
                     chatViewModel.initChat(currentUserEmail, user.email)
                     chatViewModel.setRecipientEmail(user.email)
                 chatViewModel.setUserEmail(currentUserEmail) })
@@ -99,7 +105,18 @@ fun UserSelectionScreen(
 }
 
 @Composable
-private fun UserItem(user: User, onClick: () -> Unit) {
+private fun UserItem(
+    user: User,
+    currentUserEmail: String,
+    onClick: () -> Unit,
+    viewModel: UserSelectionViewModel = viewModel(),
+    ) {
+
+    val repository = MessageRepository()
+    val chatId = viewModel.chatId(currentUserEmail,user.email)
+    Log.d("userslec", "$chatId")
+    val messages = repository.fetchLastMessage(chatId).collectAsState(initial = Result.Loading)
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -121,6 +138,21 @@ private fun UserItem(user: User, onClick: () -> Unit) {
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
+            when (val result = messages.value) {
+                is Result.Loading -> {
+                    Text(text = "Loading...", style = MaterialTheme.typography.bodySmall)
+                }
+                is Result.Error -> {
+                    Text(text = "Error fetching message", style = MaterialTheme.typography.bodySmall)
+                }
+                is Result.Success -> {
+                    val lastMessage = result.data.firstOrNull()
+                    Text(
+                        text = lastMessage?.text ?: "No messages yet",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
         }
         Column(
             modifier = Modifier
@@ -138,4 +170,4 @@ private fun UserItem(user: User, onClick: () -> Unit) {
             }
         }
     }
-} 
+}

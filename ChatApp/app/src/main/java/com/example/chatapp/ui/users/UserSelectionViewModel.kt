@@ -1,5 +1,7 @@
 package com.example.chatapp.ui.users
 
+import android.util.Log
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.chatapp.data.model.User
@@ -16,6 +18,12 @@ class UserSelectionViewModel : ViewModel() {
 
     private val _error = MutableStateFlow("")
     val error: StateFlow<String> = _error
+
+    private val _currentUserEmail = mutableStateOf("")
+    val currentUserEmail: String get() = _currentUserEmail.value
+
+    private val _currentRecipientEmail = mutableStateOf("")
+    val recipientEmail: String get() = _currentRecipientEmail.value
 
     private var allUsers: List<User> = listOf()
 
@@ -43,5 +51,12 @@ class UserSelectionViewModel : ViewModel() {
                 user.username?.contains(query, ignoreCase = true) == true
             }
         }
+    }
+
+    fun chatId(currentUserEmail: String, recipientEmail:String):String{
+        val sortedEmails = listOf(currentUserEmail, recipientEmail).sorted()
+        val chatId = "${sortedEmails[0]}-${sortedEmails[1]}"
+        Log.d("UserSelect", chatId)
+        return chatId
     }
 } 

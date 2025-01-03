@@ -42,6 +42,7 @@ import com.example.chatapp.util.DateFormatter
 import java.text.SimpleDateFormat
 import java.util.*
 import com.example.chatapp.data.repository.MessageRepository
+import com.example.chatapp.ui.users.UserSelectionViewModel
 
 @Composable
 fun ChatScreen(
@@ -153,8 +154,9 @@ fun ChatScreen(
 fun ChatTopBar(
     recipientEmail: String,
     onNavigateBack: () -> Unit,
-    viewModel: ChatViewModel = viewModel()
+    viewModel: ChatViewModel = viewModel(),
 ) {
+    val repository = MessageRepository()
     TopAppBar(
         title = { Text(text = recipientEmail) },
         navigationIcon = {

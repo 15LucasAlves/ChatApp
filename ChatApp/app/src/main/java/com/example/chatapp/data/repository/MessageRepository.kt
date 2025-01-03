@@ -97,6 +97,35 @@ class MessageRepository {
     }
 
     /**
+     * Retrieves last message so it can be displayed in the userselectionscreen.
+     */
+    fun fetchLastMessage(
+        chatId: String,
+    ): Flow<Result<List<Message>>> = callbackFlow {
+        val query = messagesCollection
+            .whereEqualTo("chatId", chatId)
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .limit(1)
+
+        val subscription = query.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                trySend(Result.Error(Exception(error.message)))
+                Log.e(TAG, "Error fetching messages for chatId '$chatId': ${error.message}")
+                return@addSnapshotListener
+            }
+
+            val messages = snapshot?.documents?.mapNotNull { doc ->
+                doc.toObject(Message::class.java)?.copy(id = doc.id)
+            } ?: emptyList()
+
+            Log.d(TAG, "Fetched ${messages.size} messages for chatId '$chatId'")
+            trySend(Result.Success(messages))
+        }
+
+        awaitClose { subscription.remove() }
+    }
+
+    /**
      * Retrieves messages for a group chat, ensuring messages are unique to the group.
      */
     fun getGroupMessages(

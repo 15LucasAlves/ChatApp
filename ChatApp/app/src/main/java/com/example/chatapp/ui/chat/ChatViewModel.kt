@@ -69,7 +69,7 @@ class ChatViewModel : ViewModel() {
         setUserEmail(currentUserEmail)
         setRecipientEmail(recipientEmail)
         currentChatId = createChatId(currentUserEmail, recipientEmail)
-        Log.d(TAG, "Chat initialized with chatId: $currentChatId")
+        Log.d("chatviewmodel", "Chat initialized with chatId: $currentChatId")
         loadMessages(true)
     }
 
@@ -84,7 +84,7 @@ class ChatViewModel : ViewModel() {
     }
 
     /**
-     * Clear message list
+     * Clear message list, lack of clearing was creating the not unique between users bug
      */
     fun clearMessageList(){
         _messages.value = emptyList()
@@ -110,6 +110,7 @@ class ChatViewModel : ViewModel() {
             Log.d(TAG, "loadMessages called but already loading. Exiting.")
             return
         }*/
+        //this was preventing the messages from loading again if u left the chat screen
 
         viewModelScope.launch {
             try {
@@ -151,6 +152,9 @@ class ChatViewModel : ViewModel() {
                             is Result.Error -> {
                                 Log.e(TAG, "Error fetching messages: ${result.exception.message}")
                                 _error.value = result.exception.message ?: "Unknown error occurred"
+                            }
+                            is Result.Loading ->{
+                                Log.e("chatviewmodel", "Loading")
                             }
                         }
                     }
@@ -217,6 +221,9 @@ class ChatViewModel : ViewModel() {
                             is Result.Error -> {
                                 Log.e(TAG, "Error fetching group messages: ${result.exception.message}")
                                 _error.value = result.exception.message ?: "Unknown error occurred"
+                            }
+                            is Result.Loading ->{
+                                Log.e("chatviewmodel", "Loading")
                             }
                         }
                     }

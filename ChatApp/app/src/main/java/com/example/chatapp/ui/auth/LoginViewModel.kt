@@ -39,7 +39,7 @@ class LoginViewModel : ViewModel() {
             }
     }
 
-    fun login(email: String, password: String, onSuccess: () -> Unit) {
+    fun login(email: String, password: String, onSuccess: () -> Unit, onFailure: () -> Unit) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
@@ -47,7 +47,8 @@ class LoginViewModel : ViewModel() {
                 Log.d("loginviewmodel","passed repo")
                 when (val result = repository.login(email, password)) {
                     is Result.Success -> onSuccess()
-                    is Result.Error -> _error.value = result.exception.message
+                    is Result.Error -> { _error.value = result.exception.message; onFailure()}
+                    is Result.Loading -> Log.d("loginview", "loading")
                 }
             } finally {
                 _isLoading.value = false
