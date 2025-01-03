@@ -4,6 +4,7 @@ package com.example.chatapp.ui.chat
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -23,6 +25,8 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -38,11 +42,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.chatapp.data.model.Message
+import com.example.chatapp.data.model.User
+import com.example.chatapp.data.repository.UserRepository
 import com.example.chatapp.util.DateFormatter
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
-import com.example.chatapp.data.repository.MessageRepository
-import com.example.chatapp.ui.users.UserSelectionViewModel
 
 @Composable
 fun ChatScreen(
@@ -50,53 +55,39 @@ fun ChatScreen(
     userEmail: String,
     recipientEmail: String,
     onNavigateBack: () -> Unit,
-    viewModel: ChatViewModel = viewModel()
+    viewModel: ChatViewModel = viewModel(),
+    userRepository: UserRepository = UserRepository()
 ) {
     var messageText by remember { mutableStateOf("") }
     var selectedMessage by remember { mutableStateOf<Message?>(null) }
     var isEditing by remember { mutableStateOf(false) }
     val messages by viewModel.messages.collectAsState()
-    val error by viewModel.error.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
     val listState = rememberLazyListState()
+    var recipientUser by remember { mutableStateOf<User?>(null) }
+    var searchQuery by remember { mutableStateOf("") } // State for search query
 
-    val imagePicker = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let { viewModel.sendImage(it, userEmail) }
-    }
+    val scope = rememberCoroutineScope()
 
-    // Message actions bottom sheet
-    var showMessageActions by remember { mutableStateOf(false) }
-    if (showMessageActions && selectedMessage != null) {
-        MessageActionsBottomSheet(
-            message = selectedMessage!!,
-            isOwnMessage = selectedMessage?.senderEmail == userEmail,
-            onDismiss = { showMessageActions = false },
-            onDelete = {
-                viewModel.deleteMessage(selectedMessage!!.id)
-                showMessageActions = false
-            },
-            onEdit = {
-                messageText = selectedMessage!!.text
-                isEditing = true
-                showMessageActions = false
-            }
-        )
-    }
-
-    DisposableEffect(Unit) {
-        viewModel.setVisibility(true)
-        onDispose {
-            viewModel.setVisibility(false)
+    // Fetch recipient user info
+    LaunchedEffect(recipientEmail) {
+        scope.launch {
+            recipientUser = userRepository.getUser(recipientEmail)
         }
+    }
+
+    // Group messages by day
+    val groupedMessages = messages.groupBy { message ->
+        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(message.timestamp))
     }
 
     Scaffold(
         topBar = {
             ChatTopBar(
-                recipientEmail = recipientEmail,
-                onNavigateBack = onNavigateBack
+                recipientUser = recipientUser,
+                onNavigateBack = onNavigateBack,
+                searchQuery = searchQuery,
+                onSearchQueryChange = { searchQuery = it }, // Update the query dynamically
+                onClearSearch = { searchQuery = "" } // Clear search query
             )
         }
     ) { padding ->
@@ -105,35 +96,44 @@ fun ChatScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Messages list
-            Box(modifier = Modifier.weight(1f)) {
-                LazyColumn(
-                    reverseLayout = true,
-                    state = listState,
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(messages) { message ->
+            // LazyColumn with grouped messages
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                reverseLayout = true,
+                state = listState,
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                groupedMessages.forEach { (date, messagesForDay) ->
+                    items(messagesForDay) { message ->
                         ChatMessageItem(
                             message = message,
                             isOwnMessage = message.senderEmail == userEmail,
-                            onLongClick = {
-                                selectedMessage = message
-                                showMessageActions = true
-                            }
+                            onLongClick = { selectedMessage = message }
+                        )
+                    }
+                    item {
+                        // Display date header
+                        Text(
+                            text = formatDateHeader(date),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
             }
 
-            // Message input
+            // Input box sticks to the bottom
             MessageInput(
                 messageText = messageText,
                 isEditing = isEditing,
                 onMessageChange = { messageText = it },
                 onSendClick = {
                     if (messageText.isNotEmpty()) {
-                        //viewModel.initChat(userEmail, recipientEmail)
                         if (isEditing && selectedMessage != null) {
                             viewModel.editMessage(selectedMessage!!.id, messageText)
                             isEditing = false
@@ -144,25 +144,99 @@ fun ChatScreen(
                         messageText = ""
                     }
                 },
-                onAttachClick = { imagePicker.launch("image/*") }
+                onAttachClick = {}
+            )
+        }
+
+        // Bottom Sheet for actions
+        if (selectedMessage != null) {
+            MessageActionsBottomSheet(
+                message = selectedMessage!!,
+                isOwnMessage = selectedMessage?.senderEmail == userEmail,
+                onDismiss = { selectedMessage = null },
+                onDelete = {
+                    viewModel.deleteMessage(selectedMessage!!.id)
+                    selectedMessage = null
+                },
+                onEdit = {
+                    isEditing = true
+                    messageText = selectedMessage!!.text
+                }
             )
         }
     }
 }
 
+fun formatDateHeader(date: String): String {
+    val parsedDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(date)
+    val formattedDate = SimpleDateFormat("EEE, MMM d", Locale.getDefault()).format(parsedDate)
+    return formattedDate
+}
 @Composable
 fun ChatTopBar(
-    recipientEmail: String,
+    recipientUser: User?,
     onNavigateBack: () -> Unit,
-    viewModel: ChatViewModel = viewModel(),
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit, // Callback to update query
+    onClearSearch: () -> Unit
 ) {
-    val repository = MessageRepository()
+    var isSearchActive by remember { mutableStateOf(false) }
+
     TopAppBar(
-        title = { Text(text = recipientEmail) },
+        title = {
+            if (isSearchActive) {
+                TextField(
+                    value = searchQuery,
+                    onValueChange = onSearchQueryChange, // Dynamically updates the query
+                    placeholder = { Text("Search messages...") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(end = 16.dp),
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedContainerColor = Color.Transparent,
+                        cursorColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    recipientUser?.photoUrl?.let { imageUrl ->
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(imageUrl)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = "User profile picture",
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Text(text = recipientUser?.username ?: "Unknown User")
+                }
+            }
+        },
         navigationIcon = {
-            IconButton(onClick = { onNavigateBack()
-                viewModel.clearMessageList()}) {
+            IconButton(onClick = onNavigateBack) {
                 Icon(Icons.Default.ArrowBack, contentDescription = "Navigate Back")
+            }
+        },
+        actions = {
+            IconButton(onClick = {
+                if (isSearchActive) {
+                    onClearSearch()
+                }
+                isSearchActive = !isSearchActive
+            }) {
+                Crossfade(targetState = isSearchActive) { state ->
+                    if (state) {
+                        Icon(Icons.Default.Close, contentDescription = "Close search")
+                    } else {
+                        Icon(Icons.Default.Search, contentDescription = "Search")
+                    }
+                }
             }
         }
     )
