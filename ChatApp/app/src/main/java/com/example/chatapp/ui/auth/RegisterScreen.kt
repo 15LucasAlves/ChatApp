@@ -1,11 +1,17 @@
 package com.example.chatapp.ui.auth
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Key
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
@@ -21,6 +27,7 @@ fun RegisterScreen(
     var confirmPassword by remember { mutableStateOf("") }
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    var isPasswordVisible by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -40,7 +47,10 @@ fun RegisterScreen(
             value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            leadingIcon = {
+                Icon(Icons.Default.Email, contentDescription = "email")
+            },
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -49,8 +59,24 @@ fun RegisterScreen(
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
+            visualTransformation = if(isPasswordVisible){
+                VisualTransformation.None
+            }else{
+                PasswordVisualTransformation()
+            },
+            modifier = Modifier.fillMaxWidth(),
+            leadingIcon = {
+                Icon(Icons.Default.Key, contentDescription = "pass")
+            },
+            trailingIcon = {
+                IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                    if(isPasswordVisible){
+                        Icon(Icons.Default.Visibility, contentDescription = "Password Visible")
+                    }else{
+                        Icon(Icons.Default.VisibilityOff, contentDescription = "Password Not Visible")
+                    }
+                }
+            }
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -59,8 +85,15 @@ fun RegisterScreen(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
             label = { Text("Confirm Password") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
+            visualTransformation = if(isPasswordVisible){
+                VisualTransformation.None
+            }else{
+                PasswordVisualTransformation()
+            },
+            modifier = Modifier.fillMaxWidth(),
+            leadingIcon = {
+                Icon(Icons.Default.Key, contentDescription = "pass")
+            }
         )
 
         if (error.isNotEmpty()) {

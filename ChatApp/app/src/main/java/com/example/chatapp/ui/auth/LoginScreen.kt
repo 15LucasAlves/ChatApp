@@ -1,6 +1,10 @@
 package com.example.chatapp.ui.auth
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Key
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -11,6 +15,10 @@ import androidx.compose.ui.unit.dp
 import com.example.chatapp.data.Result
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.chatapp.ui.chat.ChatViewModel
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.materialIcon
+import androidx.compose.ui.text.input.VisualTransformation
 
 @Composable
 fun LoginScreen(
@@ -24,6 +32,7 @@ fun LoginScreen(
     var error by remember { mutableStateOf("") }
     var loginResult by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isPasswordVisible by remember { mutableStateOf(false) }
 
 
     Column(
@@ -44,7 +53,10 @@ fun LoginScreen(
             value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            leadingIcon = {
+                Icon(Icons.Default.Email, contentDescription = "email")
+            },
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -53,8 +65,24 @@ fun LoginScreen(
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth()
+            visualTransformation = if(isPasswordVisible){
+               VisualTransformation.None
+            }else{
+                PasswordVisualTransformation()
+            },
+            modifier = Modifier.fillMaxWidth(),
+            leadingIcon = {
+                Icon(Icons.Default.Key, contentDescription = "pass")
+            },
+            trailingIcon = {
+                IconButton(onClick = { isPasswordVisible = !isPasswordVisible }) {
+                    if(isPasswordVisible){
+                        Icon(Icons.Default.Visibility, contentDescription = "Password Visible")
+                    }else{
+                        Icon(Icons.Default.VisibilityOff, contentDescription = "Password Not Visible")
+                    }
+                }
+            }
         )
 
         if (error.isNotEmpty()) {
