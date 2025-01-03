@@ -75,8 +75,15 @@ fun ChatScreen(
         }
     }
 
-    // Group messages by day
-    val groupedMessages = messages.groupBy { message ->
+    // Filter messages based on search query
+    val filteredMessages = if (searchQuery.isEmpty()) {
+        messages
+    } else {
+        messages.filter { it.text.contains(searchQuery, ignoreCase = true) }
+    }
+
+    // Group filtered messages by day
+    val groupedMessages = filteredMessages.groupBy { message ->
         SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(message.timestamp))
     }
 
