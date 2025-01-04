@@ -1,41 +1,25 @@
 @file:OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 package com.example.chatapp.ui.chat
 
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.DoneAll
-import androidx.compose.material.icons.filled.AttachFile
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.platform.*
+import androidx.compose.ui.text.*
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -48,8 +32,6 @@ import com.example.chatapp.util.DateFormatter
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 
 @Composable
 fun ChatScreen(
@@ -60,31 +42,54 @@ fun ChatScreen(
     viewModel: ChatViewModel = viewModel(),
     userRepository: UserRepository = UserRepository()
 ) {
+    // Holds the text that appears in the TextField
     var messageText by remember { mutableStateOf("") }
-    var selectedMessage by remember { mutableStateOf<Message?>(null) }
-    var isEditing by remember { mutableStateOf(false) }
-    val messages by viewModel.messages.collectAsState()
-    val listState = rememberLazyListState()
-    var recipientUser by remember { mutableStateOf<User?>(null) }
-    var searchQuery by remember { mutableStateOf("") } // State for search query
 
+    // Holds the message object that the user long-pressed (to edit/delete)
+    var selectedMessage by remember { mutableStateOf<Message?>(null) }
+
+    // Indicates whether we are currently editing (instead of sending a new message)
+    var isEditing by remember { mutableStateOf(false) }
+
+    // Controls whether the bottom sheet is shown for "Edit / Delete / Copy"
+    var showActionsSheet by remember { mutableStateOf(false) }
+
+    // Observing data from the ViewModel
+    val messages by viewModel.messages.collectAsState()
+    val isSending by viewModel.isSending.collectAsState() // Lock state for sending
+
+    // For searching messages
+    var searchQuery by remember { mutableStateOf("") }
+
+    // Used to fetch the recipient's user info
+    var recipientUser by remember { mutableStateOf<User?>(null) }
     val scope = rememberCoroutineScope()
 
-    // Fetch recipient user info
+    // A lazy list to display messages
+    val listState = rememberLazyListState()
+
+    // Multiple images picking
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris ->
+        uris.forEach { uri -> viewModel.addImageUri(uri) }
+    }
+
+    // Fetch recipient info (like their username/photo)
     LaunchedEffect(recipientEmail) {
         scope.launch {
             recipientUser = userRepository.getUser(recipientEmail)
         }
     }
 
-    // Filter messages based on search query
+    // Search filtering
     val filteredMessages = if (searchQuery.isEmpty()) {
         messages
     } else {
         messages.filter { it.text.contains(searchQuery, ignoreCase = true) }
     }
 
-    // Group filtered messages by day
+    // Group messages by date
     val groupedMessages = filteredMessages.groupBy { message ->
         SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(message.timestamp))
     }
@@ -95,8 +100,8 @@ fun ChatScreen(
                 recipientUser = recipientUser,
                 onNavigateBack = onNavigateBack,
                 searchQuery = searchQuery,
-                onSearchQueryChange = { searchQuery = it }, // Update the query dynamically
-                onClearSearch = { searchQuery = "" } // Clear search query
+                onSearchQueryChange = { searchQuery = it },
+                onClearSearch = { searchQuery = "" }
             )
         }
     ) { padding ->
@@ -105,7 +110,7 @@ fun ChatScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // LazyColumn with grouped messages
+            // Main list of messages
             LazyColumn(
                 modifier = Modifier.weight(1f),
                 reverseLayout = true,
@@ -113,16 +118,19 @@ fun ChatScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                groupedMessages.forEach { (date, messagesForDay) ->
-                    items(messagesForDay) { message ->
+                groupedMessages.forEach { (date, dailyMessages) ->
+                    items(dailyMessages) { message ->
                         ChatMessageItem(
                             message = message,
-                            isOwnMessage = message.senderEmail == userEmail,
-                            onLongClick = { selectedMessage = message }
+                            isOwnMessage = (message.senderEmail == userEmail),
+                            onLongClick = {
+                                selectedMessage = message
+                                showActionsSheet = true // open bottom sheet
+                            }
                         )
                     }
                     item {
-                        // Display date header
+                        // Date header
                         Text(
                             text = formatDateHeader(date),
                             style = MaterialTheme.typography.labelMedium,
@@ -136,57 +144,103 @@ fun ChatScreen(
                 }
             }
 
-            // Input box sticks to the bottom
+            // Show a row of selected images (thumbnails) JUST ABOVE the input
+            val selectedUris by viewModel.selectedImageUris.collectAsState()
+            if (selectedUris.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    selectedUris.forEach { uri ->
+                        Box(
+                            modifier = Modifier
+                                .padding(8.dp)
+                                .size(80.dp)
+                        ) {
+                            AsyncImage(
+                                model = uri,
+                                contentDescription = "Selected image preview",
+                                modifier = Modifier
+                                    .matchParentSize()
+                                    .clip(RoundedCornerShape(8.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                            IconButton(
+                                onClick = { viewModel.removeImageUri(uri) },
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .background(Color.Black.copy(alpha = 0.5f), CircleShape)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Remove image",
+                                    tint = Color.White
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Message input at the bottom
             MessageInput(
                 messageText = messageText,
                 isEditing = isEditing,
                 onMessageChange = { messageText = it },
                 onSendClick = {
-                    if (messageText.isNotEmpty()) {
+                    if (messageText.isNotEmpty() || viewModel.selectedImageUris.value.isNotEmpty()) {
                         if (isEditing && selectedMessage != null) {
+                            // EDIT existing message
                             viewModel.editMessage(selectedMessage!!.id, messageText)
                             isEditing = false
                             selectedMessage = null
                         } else {
+                            // SEND new message
                             viewModel.sendMessage(messageText, userEmail, recipientEmail)
                         }
                         messageText = ""
                     }
                 },
-                onAttachClick = {}
+                onAttachClick = {
+                    imagePickerLauncher.launch("image/*")
+                },
+                isSending = isSending
             )
         }
 
-        // Bottom Sheet for actions
-        if (selectedMessage != null) {
+        // Show bottom sheet if showActionsSheet == true and we have a selectedMessage
+        if (showActionsSheet && selectedMessage != null) {
             MessageActionsBottomSheet(
                 message = selectedMessage!!,
-                isOwnMessage = selectedMessage?.senderEmail == userEmail,
-                onDismiss = { selectedMessage = null },
+                isOwnMessage = (selectedMessage?.senderEmail == userEmail),
+                onDismiss = {
+                    showActionsSheet = false
+                },
                 onDelete = {
                     viewModel.deleteMessage(selectedMessage!!.id)
                     selectedMessage = null
+                    showActionsSheet = false
                 },
                 onEdit = {
+                    // Switch to "edit mode"
                     isEditing = true
                     messageText = selectedMessage!!.text
+                    // Close the sheet
+                    showActionsSheet = false
                 }
             )
         }
     }
 }
 
-fun formatDateHeader(date: String): String {
-    val parsedDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(date)
-    val formattedDate = SimpleDateFormat("EEE, MMM d", Locale.getDefault()).format(parsedDate)
-    return formattedDate
-}
 @Composable
 fun ChatTopBar(
     recipientUser: User?,
     onNavigateBack: () -> Unit,
     searchQuery: String,
-    onSearchQueryChange: (String) -> Unit, // Callback to update query
+    onSearchQueryChange: (String) -> Unit,
     onClearSearch: () -> Unit
 ) {
     var isSearchActive by remember { mutableStateOf(false) }
@@ -196,7 +250,7 @@ fun ChatTopBar(
             if (isSearchActive) {
                 TextField(
                     value = searchQuery,
-                    onValueChange = onSearchQueryChange, // Dynamically updates the query
+                    onValueChange = onSearchQueryChange,
                     placeholder = { Text("Search messages...") },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -204,8 +258,7 @@ fun ChatTopBar(
                     maxLines = 1,
                     colors = TextFieldDefaults.colors(
                         unfocusedContainerColor = Color.Transparent,
-                        focusedContainerColor = Color.Transparent,
-                        cursorColor = MaterialTheme.colorScheme.primary
+                        focusedContainerColor = Color.Transparent
                     )
                 )
             } else {
@@ -252,12 +305,31 @@ fun ChatTopBar(
     )
 }
 
+fun formatDateHeader(date: String): String {
+    val parsedDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(date)
+    return SimpleDateFormat("EEE, MMM d", Locale.getDefault()).format(parsedDate ?: Date())
+}
+
 @Composable
 fun ChatMessageItem(
     message: Message,
     isOwnMessage: Boolean,
     onLongClick: () -> Unit
 ) {
+    // Check if there's at least one image
+    val hasImages = message.imageUrls?.isNotEmpty() == true
+
+    // Decide the bubble's modifier:
+    // If images exist, fill the available space (up to 300.dp).
+    // Otherwise, let the text bubble wrap its content (also up to 300.dp).
+    val bubbleModifier = if (hasImages) {
+        Modifier
+            .widthIn(max = 300.dp)  // never exceed 300.dp
+            .fillMaxWidth()         // fill bubble width if images are present
+    } else {
+        Modifier.widthIn(max = 300.dp)  // text-only messages can wrap up to 300.dp
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -269,7 +341,7 @@ fun ChatMessageItem(
         horizontalAlignment = if (isOwnMessage) Alignment.End else Alignment.Start
     ) {
         Box(
-            modifier = Modifier
+            modifier = bubbleModifier
                 .background(
                     color = if (isOwnMessage)
                         MaterialTheme.colorScheme.primary
@@ -280,27 +352,44 @@ fun ChatMessageItem(
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
             Column {
-                if (message.imageUrl != null) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(message.imageUrl)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = "Message image",
-                        modifier = Modifier
-                            .size(200.dp)
-                            .clip(RoundedCornerShape(8.dp)),
-                        contentScale = ContentScale.Crop
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
+                // If there are images, stretch each image to fill the bubble width
+                if (hasImages) {
+                    message.imageUrls?.forEach { singleUrl ->
+                        Spacer(modifier = Modifier.height(4.dp))
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(singleUrl)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = "Message image",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
                 }
 
-                Text(
-                    text = message.text,
-                    color = Color.White,
-                    textAlign = if (isOwnMessage) TextAlign.End else TextAlign.Start
-                )
+                // Show text (if any). If there's images, fill the bubble width;
+                // if no images, just wrap content within max 300.dp.
+                if (message.text.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    val textModifier = if (hasImages) {
+                        Modifier.fillMaxWidth()
+                    } else {
+                        Modifier.wrapContentWidth() // text alone can wrap naturally
+                    }
+                    Text(
+                        text = message.text,
+                        color = Color.White,
+                        textAlign = if (isOwnMessage) TextAlign.End else TextAlign.Start,
+                        modifier = textModifier
+                    )
+                }
 
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Timestamp + read indicators
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -312,10 +401,10 @@ fun ChatMessageItem(
                     )
                     if (isOwnMessage) {
                         Icon(
-                            imageVector = if (message.readBy.size > 1)
-                                Icons.Default.DoneAll
-                            else
-                                Icons.Default.Done,
+                            imageVector = when {
+                                message.readBy.size > 1 -> Icons.Default.DoneAll
+                                else -> Icons.Default.Done
+                            },
                             contentDescription = if (message.readBy.size > 1) "Read" else "Sent",
                             tint = if (message.readBy.size > 1)
                                 Color.Blue.copy(alpha = 0.7f)
@@ -347,33 +436,40 @@ fun MessageActionsBottomSheet(
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            if (isOwnMessage) {
+            // If it's my message AND there's text, allow "Edit"
+            if (isOwnMessage && message.text.isNotEmpty()) {
                 ListItem(
                     headlineContent = { Text("Edit Message") },
-                    leadingContent = {
-                        Icon(Icons.Default.Edit, contentDescription = null)
-                    },
-                    modifier = Modifier.clickable(onClick = onEdit)
-                )
-                ListItem(
-                    headlineContent = { Text("Delete Message") },
-                    leadingContent = {
-                        Icon(Icons.Default.Delete, contentDescription = null)
-                    },
-                    modifier = Modifier.clickable(onClick = onDelete)
+                    leadingContent = { Icon(Icons.Default.Edit, contentDescription = null) },
+                    modifier = Modifier.clickable {
+                        onEdit()
+                    }
                 )
             }
-            ListItem(
-                headlineContent = { Text("Copy Text") },
-                leadingContent = {
-                    Icon(Icons.Default.ContentCopy, contentDescription = null)
-                },
-                modifier = Modifier.clickable(onClick ={
-                    val copiedtext = message.text
-                    clipboardManager.setText(AnnotatedString(copiedtext))
-                    Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_LONG).show()
-                })
-            )
+
+            // Always allow "Delete" if it's my message
+            if (isOwnMessage) {
+                ListItem(
+                    headlineContent = { Text("Delete Message") },
+                    leadingContent = { Icon(Icons.Default.Delete, contentDescription = null) },
+                    modifier = Modifier.clickable {
+                        onDelete()
+                    }
+                )
+            }
+
+            // "Copy" only if there's text in the message
+            if (message.text.isNotEmpty()) {
+                ListItem(
+                    headlineContent = { Text("Copy Text") },
+                    leadingContent = { Icon(Icons.Default.ContentCopy, contentDescription = null) },
+                    modifier = Modifier.clickable {
+                        clipboardManager.setText(AnnotatedString(message.text))
+                        Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
+                        onDismiss() // close bottom sheet after copying
+                    }
+                )
+            }
         }
     }
 }
@@ -384,7 +480,8 @@ fun MessageInput(
     isEditing: Boolean,
     onMessageChange: (String) -> Unit,
     onSendClick: () -> Unit,
-    onAttachClick: () -> Unit
+    onAttachClick: () -> Unit,
+    isSending: Boolean
 ) {
     Row(
         modifier = Modifier
@@ -392,7 +489,7 @@ fun MessageInput(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onAttachClick) {
+        IconButton(onClick = onAttachClick, enabled = !isSending) {
             Icon(Icons.Default.AttachFile, contentDescription = "Attach")
         }
 
@@ -404,7 +501,7 @@ fun MessageInput(
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(8.dp)
                 )
-                .padding(horizontal = 8.dp, vertical = 0.dp)
+                .padding(horizontal = 8.dp)
         ) {
             val scrollState = rememberScrollState()
             Column(
@@ -417,31 +514,29 @@ fun MessageInput(
                     onValueChange = onMessageChange,
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = {
-                        Text(if (isEditing) "Edit message..." else "Type a message")
+                        Text(if (isEditing) "Edit message..." else "Type a message...")
                     },
                     colors = TextFieldDefaults.colors(
                         unfocusedContainerColor = Color.Transparent,
                         focusedContainerColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent
-                    )
+                    ),
+                    enabled = !isSending
                 )
             }
         }
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        IconButton(onClick = onSendClick) {
+        IconButton(
+            onClick = onSendClick,
+            enabled = !isSending // disable while sending to avoid duplicates
+        ) {
             Icon(
                 imageVector = if (isEditing) Icons.Default.Check else Icons.Default.Send,
                 contentDescription = if (isEditing) "Save" else "Send"
             )
         }
     }
-}
-
-
-fun formatTimestamp(timestamp: Long): String {
-    val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
-    return sdf.format(Date(timestamp))
 }

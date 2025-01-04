@@ -7,10 +7,10 @@ data class Message(
     val recipientEmail: String = "",
     val timestamp: Long = 0L,
     val chatId: String = "",
-    val imageUrl: String? = null,
-    val edited: Boolean = false, // Renamed from isEdited to match Firestore field
+    val imageUrls: List<String>? = null,  // <-- Replaces single String? with a list
+    val edited: Boolean = false,
     val editedAt: Long? = null,
     val readBy: List<String> = emptyList(),
-    val groupMessage: Boolean = false, // Renamed from isGroupMessage to match Firestore field
+    val groupMessage: Boolean = false,
     val groupId: String? = null
 )

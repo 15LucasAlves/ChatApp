@@ -5,11 +5,12 @@ import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.chatapp.data.Result
 import com.example.chatapp.data.model.Message
 import com.example.chatapp.data.repository.MessageRepository
-import com.example.chatapp.data.Result
 import com.google.firebase.storage.FirebaseStorage
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -20,11 +21,15 @@ class ChatViewModel : ViewModel() {
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
     val messages: StateFlow<List<Message>> = _messages
 
-    private val _error = MutableStateFlow<String>("")
+    private val _error = MutableStateFlow("")
     val error: StateFlow<String> = _error
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
+
+    // --------------------- Prevent multiple sends ---------------------
+    private val _isSending = MutableStateFlow(false)
+    val isSending: StateFlow<Boolean> = _isSending
 
     private var currentChatId: String? = null
     private var currentGroupId: String? = null
@@ -34,13 +39,24 @@ class ChatViewModel : ViewModel() {
     private val storage = FirebaseStorage.getInstance()
 
     private var isVisible = false
-    private var lastReadMessageId: String? = null
+
+    // --------------------- Image Selection ---------------------
+    private val _selectedImageUris = MutableStateFlow<List<Uri>>(emptyList())
+    val selectedImageUris: StateFlow<List<Uri>> = _selectedImageUris
+
+    fun addImageUri(uri: Uri) {
+        _selectedImageUris.value = _selectedImageUris.value + uri
+    }
+
+    fun removeImageUri(uri: Uri) {
+        _selectedImageUris.value = _selectedImageUris.value - uri
+    }
+
+    fun clearImageUris() {
+        _selectedImageUris.value = emptyList()
+    }
 
     // --------------------- User Email Management ---------------------
-
-    /**
-     * Holds the current user's email.
-     */
     private val _currentUserEmail = mutableStateOf("")
     val currentUserEmail: String get() = _currentUserEmail.value
 
@@ -49,9 +65,6 @@ class ChatViewModel : ViewModel() {
         Log.d(TAG, "User email updated: $email")
     }
 
-    /**
-     * Holds the recipient's email for individual chats.
-     */
     private val _currentRecipientEmail = mutableStateOf("")
     val recipientEmail: String get() = _currentRecipientEmail.value
 
@@ -61,71 +74,39 @@ class ChatViewModel : ViewModel() {
     }
 
     // --------------------- Chat Initialization ---------------------
-
-    /**
-     * Initializes an individual chat between two users.
-     */
     fun initChat(currentUserEmail: String, recipientEmail: String) {
         setUserEmail(currentUserEmail)
         setRecipientEmail(recipientEmail)
         currentChatId = createChatId(currentUserEmail, recipientEmail)
-        Log.d("chatviewmodel", "Chat initialized with chatId: $currentChatId")
-        loadMessages(true)
+        loadMessages(initial = true)
     }
 
-    /**
-     * Initializes a group chat.
-     */
     fun initGroupChat(currentUserEmail: String, groupId: String) {
         setUserEmail(currentUserEmail)
         currentGroupId = groupId
-        Log.d(TAG, "Group chat initialized with groupId: $groupId")
-        loadGroupMessages(true)
+        loadGroupMessages(initial = true)
     }
 
-    /**
-     * Clear message list, lack of clearing was creating the not unique between users bug
-     */
-    fun clearMessageList(){
+    fun clearMessageList() {
         _messages.value = emptyList()
     }
 
-    /**
-     * Creates a unique chatId by sorting and concatenating user emails.
-     */
     private fun createChatId(currentUserEmail: String, recipientEmail: String): String {
         val sortedEmails = listOf(currentUserEmail, recipientEmail).sorted()
-        val chatId = "${sortedEmails[0]}-${sortedEmails[1]}"
-        Log.d(TAG, "Generated chatId: $chatId")
-        return chatId
+        return "${sortedEmails[0]}-${sortedEmails[1]}"
     }
 
     // --------------------- Message Loading ---------------------
-
-    /**
-     * Loads messages for an individual chat.
-     */
     fun loadMessages(initial: Boolean = false) {
-        /*if (_isLoading.value) {
-            Log.d(TAG, "loadMessages called but already loading. Exiting.")
-            return
-        }*/
-        //this was preventing the messages from loading again if u left the chat screen
-
         viewModelScope.launch {
             try {
                 _isLoading.value = true
                 _error.value = ""
-                Log.d(TAG, "Loading messages. Initial: $initial")
-
                 if (initial) {
                     lastMessageTimestamp = null
                     _messages.value = emptyList()
-                    Log.d(TAG, "Initial load: Resetting messages and timestamp.")
                 }
-
                 currentChatId?.let { chatId ->
-                    Log.d(TAG, "Fetching messages for chatId: $chatId")
                     repository.getMessagesForChat(
                         chatId = chatId,
                         pageSize = pageSize,
@@ -133,7 +114,6 @@ class ChatViewModel : ViewModel() {
                     ).collect { result ->
                         when (result) {
                             is Result.Success -> {
-                                Log.d(TAG, "Successfully fetched ${result.data.size} messages.")
                                 if (result.data.isNotEmpty()) {
                                     lastMessageTimestamp = result.data.last().timestamp
                                     _messages.value = if (initial) {
@@ -141,60 +121,43 @@ class ChatViewModel : ViewModel() {
                                     } else {
                                         _messages.value + result.data
                                     }
-                                    Log.d(TAG, "Updated messages list. Total messages: ${_messages.value.size}")
-                                    if (isVisible) {
-                                        markUnreadMessagesAsRead()
-                                    }
-                                } else {
-                                    Log.d(TAG, "No more messages to load.")
+                                    if (isVisible) markUnreadMessagesAsRead()
                                 }
                             }
                             is Result.Error -> {
-                                Log.e(TAG, "Error fetching messages: ${result.exception.message}")
-                                _error.value = result.exception.message ?: "Unknown error occurred"
+                                _error.value = result.exception.message ?: "Unknown error"
                             }
-                            is Result.Loading ->{
-                                Log.e("chatviewmodel", "Loading")
+                            is Result.Loading -> {
+                                // No-op
                             }
                         }
                     }
                 } ?: run {
-                    Log.e(TAG, "currentChatId is null. Cannot load messages.")
                     _error.value = "Chat ID is not set."
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Exception in loadMessages: ${e.message}", e)
                 _error.value = "Failed to load messages: ${e.message}"
             } finally {
                 _isLoading.value = false
-                Log.d(TAG, "Loading messages completed. isLoading set to false.")
             }
         }
     }
 
-    /**
-     * Loads messages for a group chat.
-     */
-    fun loadGroupMessages(initial: Boolean = false) {
-        if (_isLoading.value) {
-            Log.d(TAG, "loadGroupMessages called but already loading. Exiting.")
-            return
-        }
+    fun loadMoreMessages() {
+        loadMessages(initial = false)
+    }
 
+    fun loadGroupMessages(initial: Boolean = false) {
+        if (_isLoading.value) return
         viewModelScope.launch {
             try {
                 _isLoading.value = true
                 _error.value = ""
-                Log.d(TAG, "Loading group messages. Initial: $initial")
-
                 if (initial) {
                     lastMessageTimestamp = null
                     _messages.value = emptyList()
-                    Log.d(TAG, "Initial group load: Resetting messages and timestamp.")
                 }
-
                 currentGroupId?.let { groupId ->
-                    Log.d(TAG, "Fetching group messages for groupId: $groupId")
                     repository.getGroupMessages(
                         groupId = groupId,
                         pageSize = pageSize,
@@ -202,7 +165,6 @@ class ChatViewModel : ViewModel() {
                     ).collect { result ->
                         when (result) {
                             is Result.Success -> {
-                                Log.d(TAG, "Successfully fetched ${result.data.size} group messages.")
                                 if (result.data.isNotEmpty()) {
                                     lastMessageTimestamp = result.data.last().timestamp
                                     _messages.value = if (initial) {
@@ -210,195 +172,127 @@ class ChatViewModel : ViewModel() {
                                     } else {
                                         _messages.value + result.data
                                     }
-                                    Log.d(TAG, "Updated group messages list. Total messages: ${_messages.value.size}")
-                                    if (isVisible) {
-                                        markUnreadMessagesAsRead()
-                                    }
-                                } else {
-                                    Log.d(TAG, "No more group messages to load.")
+                                    if (isVisible) markUnreadMessagesAsRead()
                                 }
                             }
                             is Result.Error -> {
-                                Log.e(TAG, "Error fetching group messages: ${result.exception.message}")
-                                _error.value = result.exception.message ?: "Unknown error occurred"
+                                _error.value = result.exception.message ?: "Unknown error"
                             }
-                            is Result.Loading ->{
-                                Log.e("chatviewmodel", "Loading")
+                            is Result.Loading -> {
+                                // No-op
                             }
                         }
                     }
                 } ?: run {
-                    Log.e(TAG, "currentGroupId is null. Cannot load group messages.")
                     _error.value = "Group ID is not set."
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Exception in loadGroupMessages: ${e.message}", e)
                 _error.value = "Failed to load group messages: ${e.message}"
             } finally {
                 _isLoading.value = false
-                Log.d(TAG, "Loading group messages completed. isLoading set to false.")
             }
         }
     }
 
-    /**
-     * Loads more messages for pagination in individual chats.
-     */
-    fun loadMoreMessages() {
-        Log.d(TAG, "loadMoreMessages called.")
-        loadMessages(initial = false)
-    }
-
-    /**
-     * Loads more messages for pagination in group chats.
-     */
     fun loadMoreGroupMessages() {
-        Log.d(TAG, "loadMoreGroupMessages called.")
         loadGroupMessages(initial = false)
     }
 
     // --------------------- Message Sending ---------------------
-
-    /**
-     * Sends a text message in an individual chat.
-     */
     fun sendMessage(text: String, senderEmail: String, receiverEmail: String) {
-        Log.d(TAG, "sendMessage called with text: \"$text\", sender: $senderEmail, receiver: $receiverEmail")
+        // If we are already sending, do nothing
+        if (_isSending.value) return
+
         viewModelScope.launch {
+            _isSending.value = true
             try {
                 _error.value = ""
                 currentChatId?.let { chatId ->
+                    // 1) Upload any selected images
+                    val imageUris = _selectedImageUris.value
+                    val imageUrls = if (imageUris.isNotEmpty()) {
+                        uploadImages(imageUris, senderEmail)
+                    } else emptyList()
+
+                    // 2) Build the message
                     val message = Message(
                         text = text,
                         senderEmail = senderEmail,
                         recipientEmail = receiverEmail,
                         timestamp = System.currentTimeMillis(),
                         chatId = chatId,
-                        groupMessage = false
+                        groupMessage = false,
+                        imageUrls = if (imageUrls.isEmpty()) null else imageUrls
                     )
-                    Log.d(TAG, "Prepared message: $message")
+
+                    // 3) Send
                     repository.sendMessage(message)
-                    Log.d(TAG, "Message sent successfully.")
-                    // No manual addition to _messages; snapshot listener handles it
+
+                    // 4) Clear the local list of selected URIs after sending
+                    clearImageUris()
                 } ?: run {
-                    Log.e(TAG, "currentChatId is null. Cannot send message.")
                     _error.value = "Chat ID is not set."
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Exception in sendMessage: ${e.message}", e)
                 _error.value = "Failed to send message: ${e.message}"
+            } finally {
+                // Re-enable the send button after the process finishes
+                _isSending.value = false
             }
         }
     }
 
-    /**
-     * Sends an image message in an individual chat.
-     */
-    fun sendImage(imageUri: Uri, senderEmail: String) {
-        Log.d(TAG, "sendImage called with URI: $imageUri, sender: $senderEmail")
-        viewModelScope.launch {
-            try {
-                _error.value = ""
-                currentChatId?.let { chatId ->
-                    // Upload image to Firebase Storage
-                    val imageRef = storage.reference.child(
-                        "chat_images/${senderEmail}_${System.currentTimeMillis()}"
-                    )
-                    Log.d(TAG, "Uploading image to: ${imageRef.path}")
-                    imageRef.putFile(imageUri).await()
-                    val imageUrl = imageRef.downloadUrl.await().toString()
-                    Log.d(TAG, "Image uploaded. URL: $imageUrl")
-
-                    // Create message with image
-                    val message = Message(
-                        text = "📷 Image",
-                        senderEmail = senderEmail,
-                        recipientEmail = recipientEmail, // Ensure recipientEmail is correctly set
-                        timestamp = System.currentTimeMillis(),
-                        chatId = chatId,
-                        imageUrl = imageUrl,
-                        groupMessage = false
-                    )
-                    Log.d(TAG, "Prepared image message: $message")
-                    repository.sendMessage(message)
-                    Log.d(TAG, "Image message sent successfully.")
-                    // No manual addition to _messages; snapshot listener handles it
-                } ?: run {
-                    Log.e(TAG, "currentChatId is null. Cannot send image.")
-                    _error.value = "Chat ID is not set."
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Exception in sendImage: ${e.message}", e)
-                _error.value = "Failed to send image: ${e.message}"
-            }
+    private suspend fun uploadImages(uris: List<Uri>, senderEmail: String): List<String> {
+        val imageUrls = mutableListOf<String>()
+        for (uri in uris) {
+            val imageRef = storage.reference.child(
+                "chat_images/${senderEmail}_${System.currentTimeMillis()}_${uri.lastPathSegment}"
+            )
+            imageRef.putFile(uri).await()
+            val downloadUrl = imageRef.downloadUrl.await().toString()
+            imageUrls.add(downloadUrl)
         }
+        return imageUrls
     }
 
-    // --------------------- Message Editing and Deletion ---------------------
-
-    /**
-     * Deletes a message.
-     */
+    // --------------------- Message Editing & Deletion ---------------------
     fun deleteMessage(messageId: String) {
-        Log.d(TAG, "deleteMessage called with messageId: $messageId")
         viewModelScope.launch {
             try {
                 repository.deleteMessage(messageId)
-                Log.d(TAG, "Message deleted successfully.")
             } catch (e: Exception) {
-                Log.e(TAG, "Exception in deleteMessage: ${e.message}", e)
                 _error.value = "Failed to delete message: ${e.message}"
             }
         }
     }
 
-    /**
-     * Edits a message's text.
-     */
     fun editMessage(messageId: String, newText: String) {
-        Log.d(TAG, "editMessage called with messageId: $messageId, newText: \"$newText\"")
+        // No need to lock send for editing, but we do need to ensure it overwrites the text
         viewModelScope.launch {
             try {
                 repository.editMessage(messageId, newText)
-                Log.d(TAG, "Message edited successfully.")
             } catch (e: Exception) {
-                Log.e(TAG, "Exception in editMessage: ${e.message}", e)
                 _error.value = "Failed to edit message: ${e.message}"
             }
         }
     }
 
-    // --------------------- Visibility and Read Receipts ---------------------
-
-    /**
-     * Sets the visibility of the chat (e.g., when the chat screen is visible).
-     * If visible, marks unread messages as read.
-     */
+    // --------------------- Visibility & Read Receipts ---------------------
     fun setVisibility(visible: Boolean) {
-        Log.d(TAG, "setVisibility called with visible: $visible")
         isVisible = visible
-        if (visible) {
-            markUnreadMessagesAsRead()
-        }
+        if (visible) markUnreadMessagesAsRead()
     }
 
-    /**
-     * Marks unread messages as read by the current user.
-     */
     private fun markUnreadMessagesAsRead() {
-        Log.d(TAG, "markUnreadMessagesAsRead called.")
         viewModelScope.launch {
             try {
-                val unreadMessages = _messages.value.filter { message ->
-                    message.senderEmail != currentUserEmail && !message.readBy.contains(currentUserEmail)
+                val unreadMessages = _messages.value.filter { msg ->
+                    msg.senderEmail != currentUserEmail && !msg.readBy.contains(currentUserEmail)
                 }
-                Log.d(TAG, "Found ${unreadMessages.size} unread messages.")
                 if (unreadMessages.isNotEmpty()) {
                     repository.markMessagesAsRead(unreadMessages, currentUserEmail)
-                    Log.d(TAG, "Marked unread messages as read.")
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Exception in markUnreadMessagesAsRead: ${e.message}", e)
                 _error.value = "Failed to mark messages as read: ${e.message}"
             }
         }
