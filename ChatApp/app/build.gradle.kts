@@ -69,7 +69,8 @@ dependencies {
     // Add Firebase Database
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation("com.google.firebase:firebase-database-ktx")
-
+    implementation("com.google.firebase:firebase-messaging-ktx")
+    
     // Add Firebase Authentication
     implementation("com.google.firebase:firebase-auth-ktx")
 

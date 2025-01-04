@@ -7,6 +7,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import com.google.firebase.firestore.SetOptions
 
 class UserRepository {
     private val firestore = FirebaseFirestore.getInstance()
@@ -57,12 +58,24 @@ class UserRepository {
             if (photoUrl != null) {
                 updates["photoUrl"] = photoUrl
             }
-            
+
             usersCollection.document(email)
                 .update(updates)
                 .await()
         } catch (e: Exception) {
             throw Exception("Failed to update user details: ${e.message}")
+        }
+    }
+
+    suspend fun updateFcmToken(email: String, token: String) {
+        try {
+            val docRef = usersCollection.document(email)
+            docRef.set(
+                mapOf("fcmToken" to token),
+                SetOptions.merge() // Ensures doc is created/merged if nonexistent
+            ).await()
+        } catch (e: Exception) {
+            Log.e("UserRepository", "Failed to update FCM token: ${e.message}")
         }
     }
 }

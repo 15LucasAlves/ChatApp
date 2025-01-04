@@ -9,6 +9,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.Timestamp
 
 class AuthRepository {
     private val auth = FirebaseAuth.getInstance()
@@ -32,7 +33,7 @@ class AuthRepository {
             // Create user document in Firestore
             val user = User(
                 email = email,
-                createdAt = System.currentTimeMillis()
+                createdAt = Timestamp.now()
             )
             userRepository.createUser(user)
 
