@@ -48,7 +48,8 @@ import com.example.chatapp.util.DateFormatter
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
-
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 @Composable
 fun ChatScreen(
@@ -394,18 +395,38 @@ fun MessageInput(
             Icon(Icons.Default.AttachFile, contentDescription = "Attach")
         }
 
-        TextField(
-            value = messageText,
-            onValueChange = onMessageChange,
-            modifier = Modifier.weight(1f),
-            placeholder = {
-                Text(if (isEditing) "Edit message..." else "Type a message")
-            },
-            colors = TextFieldDefaults.colors(
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                focusedContainerColor = MaterialTheme.colorScheme.surface
-            )
-        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .heightIn(min = 56.dp, max = 150.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(8.dp)
+                )
+                .padding(horizontal = 8.dp, vertical = 0.dp)
+        ) {
+            val scrollState = rememberScrollState()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(scrollState)
+            ) {
+                TextField(
+                    value = messageText,
+                    onValueChange = onMessageChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = {
+                        Text(if (isEditing) "Edit message..." else "Type a message")
+                    },
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent
+                    )
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.width(8.dp))
 
@@ -417,6 +438,7 @@ fun MessageInput(
         }
     }
 }
+
 
 fun formatTimestamp(timestamp: Long): String {
     val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
