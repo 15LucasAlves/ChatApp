@@ -71,6 +71,7 @@ fun UserSelectionScreen(
             leadingIcon = {
                 Icon(Icons.Default.Search, contentDescription = "search")
             },
+            maxLines = 1,
             colors = TextFieldDefaults.colors(
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent

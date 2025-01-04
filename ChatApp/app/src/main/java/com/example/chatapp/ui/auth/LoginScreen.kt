@@ -57,6 +57,7 @@ fun LoginScreen(
             leadingIcon = {
                 Icon(Icons.Default.Email, contentDescription = "email")
             },
+            maxLines = 1,
         )
 
         Spacer(modifier = Modifier.height(16.dp))

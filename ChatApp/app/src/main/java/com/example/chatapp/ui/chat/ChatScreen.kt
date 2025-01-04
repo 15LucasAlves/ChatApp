@@ -201,6 +201,7 @@ fun ChatTopBar(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(end = 16.dp),
+                    maxLines = 1,
                     colors = TextFieldDefaults.colors(
                         unfocusedContainerColor = Color.Transparent,
                         focusedContainerColor = Color.Transparent,
