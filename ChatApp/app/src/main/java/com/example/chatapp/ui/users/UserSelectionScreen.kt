@@ -60,6 +60,7 @@ fun UserSelectionScreen(
     ) {
 
         TextField(
+            shape = MaterialTheme.shapes.medium,
             value = searchQuery,
             onValueChange = {
                 searchQuery = it
@@ -69,7 +70,11 @@ fun UserSelectionScreen(
             placeholder = { Text("Search users...") },
             leadingIcon = {
                 Icon(Icons.Default.Search, contentDescription = "search")
-            }
+            },
+            colors = TextFieldDefaults.colors(
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent
+            )
         )
 
         if (error.isNotEmpty()) {
