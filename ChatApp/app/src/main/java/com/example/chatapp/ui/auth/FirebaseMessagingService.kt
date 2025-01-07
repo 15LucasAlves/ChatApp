@@ -6,9 +6,16 @@ import android.content.Context
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.lifecycle.viewModelScope
 import com.example.chatapp.R
+import com.example.chatapp.data.repository.UserRepository
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 /**
  * This class extends the FirebaseMessagingService and is responsible for handling
@@ -24,9 +31,17 @@ class FirebaseMessagingService : FirebaseMessagingService() {
      *
      * @param token The new token provided by FCM.
      */
+    @OptIn(DelicateCoroutinesApi::class)
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         Log.d("MyFirebaseMsgService", "Refreshed token: $token")
+        val auth = FirebaseAuth.getInstance()
+        auth.currentUser?.email?.let { email ->
+            val userRepository = UserRepository()
+            GlobalScope.launch(Dispatchers.IO) {
+                userRepository.updateFcmToken(email, token)
+            }
+        }
     }
 
     /**
