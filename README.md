@@ -63,8 +63,6 @@ _Tanto o login como o registo utilizam a Firebase Email/Password Authentication.
 
 ---
 
----
-
 ## Modelo de Dados
 
 O modelo de dados utilizado está estruturado em três principais objetos:
@@ -93,7 +91,6 @@ A aplicação foi implementada utilizando o modelo MVVM (Model-View-ViewModel), 
 
 ## Dificuldades
 
-- **Notificações:** O `FirebaseMessagingService` não foi completado devido à falta de tempo e complexidade na configuração das notificações.
 - **Gestão de Mensagens:** Implementar a funcionalidade de busca, edição e eliminação de mensagens apresentou desafios, mas foi concluída com sucesso.
 - **Gestão de Estados:** Garantir a consistência entre os estados da aplicação utilizando `Flow` e `StateFlow` foi inicialmente desafiador.
 
@@ -101,4 +98,4 @@ A aplicação foi implementada utilizando o modelo MVVM (Model-View-ViewModel), 
 
 ## Conclusões
 
-O projeto foi uma experiência enriquecedora, permitindo explorar e consolidar conhecimentos no desenvolvimento de aplicações móveis utilizando Android Studio, Jetpack Compose e Firebase. A divisão clara de responsabilidades na estrutura do código tornou o projeto mais organizado e escalável. Apesar de algumas funcionalidades não terem sido concluídas, os objetivos principais foram alcançados com sucesso.
+O projeto foi uma experiência enriquecedora, permitindo explorar e consolidar conhecimentos no desenvolvimento de aplicações móveis utilizando Android Studio, Jetpack Compose e Firebase. A divisão clara de responsabilidades na estrutura do código tornou o projeto mais organizado e escalável. Apesar de algumas dificuldades, os objetivos principais foram alcançados com sucesso.
