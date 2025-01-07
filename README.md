@@ -20,7 +20,7 @@ A pasta `data` contém:
 
 ### Estrutura da pasta `ui`
 A pasta `ui` está subdividida em cinco pastas principais:
-- **auth**: Contém o código para login e registo. Implementado no modelo MVVM, cada funcionalidade possui um `.kt` e o respetivo `ViewModel`. Também inclui o `FirebaseMessagingService` para notificações (não finalizado).
+- **auth**: Contém o código para login e registo. Implementado no modelo MVVM, cada funcionalidade possui um `.kt` e o respetivo `ViewModel`. Também inclui o `FirebaseMessagingService` para notificações (agora finalizado).
 - **chat**: Código relativo à tela de chat.
 - **profile**: Código relativo ao perfil do utilizador, permitindo atualização de dados.
 - **theme**: Define as cores, fontes e estilos principais da aplicação.
@@ -60,6 +60,7 @@ _Tanto o login como o registo utilizam a Firebase Email/Password Authentication.
   - Permite envio de várias imagens por mensagem.
   - Permite editar, copiar e eliminar mensagens.
   - Possui funcionalidade de busca em mensagens específicas no chat.
+  - Notificações.
 
 ---
 
