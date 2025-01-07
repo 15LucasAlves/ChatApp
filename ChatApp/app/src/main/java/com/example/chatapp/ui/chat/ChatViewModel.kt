@@ -14,6 +14,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
+/**
+ * ViewModel for the chat screen, responsible for managing the state and logic of the chat.
+ */
 class ChatViewModel : ViewModel() {
     private val TAG = "ChatViewModel"
 
@@ -44,14 +47,25 @@ class ChatViewModel : ViewModel() {
     private val _selectedImageUris = MutableStateFlow<List<Uri>>(emptyList())
     val selectedImageUris: StateFlow<List<Uri>> = _selectedImageUris
 
+    /**
+     * Adds a new image URI to the list of selected image URIs.
+     * @param uri The URI of the image to be added.
+     */
     fun addImageUri(uri: Uri) {
         _selectedImageUris.value = _selectedImageUris.value + uri
     }
 
+    /**
+     * Removes an image URI from the list of selected image URIs.
+     * @param uri The URI of the image to be removed.
+     */
     fun removeImageUri(uri: Uri) {
         _selectedImageUris.value = _selectedImageUris.value - uri
     }
 
+    /**
+     * Clears the list of selected image URIs.
+     */
     fun clearImageUris() {
         _selectedImageUris.value = emptyList()
     }
@@ -60,6 +74,10 @@ class ChatViewModel : ViewModel() {
     private val _currentUserEmail = mutableStateOf("")
     val currentUserEmail: String get() = _currentUserEmail.value
 
+    /**
+     * Sets the current user's email address.
+     * @param email The email address of the current user.
+     */
     fun setUserEmail(email: String) {
         _currentUserEmail.value = email
         Log.d(TAG, "User email updated: $email")
@@ -68,12 +86,22 @@ class ChatViewModel : ViewModel() {
     private val _currentRecipientEmail = mutableStateOf("")
     val recipientEmail: String get() = _currentRecipientEmail.value
 
+    /**
+     * Sets the recipient's email address.
+     * @param email The email address of the recipient.
+     */
     fun setRecipientEmail(email: String) {
         _currentRecipientEmail.value = email
         Log.d(TAG, "Recipient email updated: $email")
     }
 
     // --------------------- Chat Initialization ---------------------
+    /**
+     * Initializes the chat by setting the current user's email, the recipient's email, and the current chat ID.
+     * Then, it loads the messages for the current chat.
+     * @param currentUserEmail The email address of the current user.
+     * @param recipientEmail The email address of the recipient.
+     */
     fun initChat(currentUserEmail: String, recipientEmail: String) {
         setUserEmail(currentUserEmail)
         setRecipientEmail(recipientEmail)
@@ -81,22 +109,41 @@ class ChatViewModel : ViewModel() {
         loadMessages(initial = true)
     }
 
+    /**
+     * Initializes the group chat by setting the current user's email and the current group ID.
+     * Then, it loads the messages for the current group.
+     * @param currentUserEmail The email address of the current user.
+     * @param groupId The ID of the group.
+     */
     fun initGroupChat(currentUserEmail: String, groupId: String) {
         setUserEmail(currentUserEmail)
         currentGroupId = groupId
         loadGroupMessages(initial = true)
     }
 
+    /**
+     * Clears the list of messages.
+     */
     fun clearMessageList() {
         _messages.value = emptyList()
     }
 
+    /**
+     * Creates a unique chat ID based on the current user's email and the recipient's email.
+     * @param currentUserEmail The email address of the current user.
+     * @param recipientEmail The email address of the recipient.
+     * @return The unique chat ID.
+     */
     private fun createChatId(currentUserEmail: String, recipientEmail: String): String {
         val sortedEmails = listOf(currentUserEmail, recipientEmail).sorted()
         return "${sortedEmails[0]}-${sortedEmails[1]}"
     }
 
     // --------------------- Message Loading ---------------------
+    /**
+     * Loads the messages for the current chat.
+     * @param initial If true, it will load the initial set of messages. Otherwise, it will load more messages.
+     */
     fun loadMessages(initial: Boolean = false) {
         viewModelScope.launch {
             try {
@@ -143,10 +190,17 @@ class ChatViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Loads more messages for the current chat.
+     */
     fun loadMoreMessages() {
         loadMessages(initial = false)
     }
 
+    /**
+     * Loads the messages for the current group.
+     * @param initial If true, it will load the initial set of messages. Otherwise, it will load more messages.
+     */
     fun loadGroupMessages(initial: Boolean = false) {
         if (_isLoading.value) return
         viewModelScope.launch {
@@ -194,11 +248,20 @@ class ChatViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Loads more messages for the current group.
+     */
     fun loadMoreGroupMessages() {
         loadGroupMessages(initial = false)
     }
 
     // --------------------- Message Sending ---------------------
+    /**
+     * Sends a message to the current chat.
+     * @param text The text of the message.
+     * @param senderEmail The email address of the sender.
+     * @param receiverEmail The email address of the receiver.
+     */
     fun sendMessage(text: String, senderEmail: String, receiverEmail: String) {
         // If we are already sending, do nothing
         if (_isSending.value) return
@@ -242,6 +305,12 @@ class ChatViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Uploads the selected images to Firebase Storage and returns the download URLs.
+     * @param uris The list of image URIs to be uploaded.
+     * @param senderEmail The email address of the sender.
+     * @return The list of download URLs for the uploaded images.
+     */
     private suspend fun uploadImages(uris: List<Uri>, senderEmail: String): List<String> {
         val imageUrls = mutableListOf<String>()
         for (uri in uris) {
@@ -256,6 +325,10 @@ class ChatViewModel : ViewModel() {
     }
 
     // --------------------- Message Editing & Deletion ---------------------
+    /**
+     * Deletes a message from the chat.
+     * @param messageId The ID of the message to be deleted.
+     */
     fun deleteMessage(messageId: String) {
         viewModelScope.launch {
             try {
@@ -266,6 +339,11 @@ class ChatViewModel : ViewModel() {
         }
     }
 
+    /**
+     * Edits the text of a message in the chat.
+     * @param messageId The ID of the message to be edited.
+     * @param newText The new text for the message.
+     */
     fun editMessage(messageId: String, newText: String) {
         // No need to lock send for editing, but we do need to ensure it overwrites the text
         viewModelScope.launch {
@@ -278,11 +356,19 @@ class ChatViewModel : ViewModel() {
     }
 
     // --------------------- Visibility & Read Receipts ---------------------
+    /**
+     * Sets the visibility of the chat screen.
+     * If the screen becomes visible, it will mark all unread messages as read.
+     * @param visible True if the chat screen is visible, false otherwise.
+     */
     fun setVisibility(visible: Boolean) {
         isVisible = visible
         if (visible) markUnreadMessagesAsRead()
     }
 
+    /**
+     * Marks all unread messages as read for the current user.
+     */
     private fun markUnreadMessagesAsRead() {
         viewModelScope.launch {
             try {

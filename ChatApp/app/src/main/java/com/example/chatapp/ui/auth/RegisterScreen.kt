@@ -15,6 +15,16 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
+/**
+ * The RegisterScreen composable function is responsible for rendering the registration screen
+ * of the chat app. It includes input fields for email, password, and confirm password, as well
+ * as buttons for registration and navigating to the login screen.
+ *
+ * @param modifier The modifier to be applied to the screen.
+ * @param onRegister A callback function that is called when the user successfully registers.
+ * @param onNavigateToLogin A callback function that is called when the user wants to navigate to the login screen.
+ * @param viewModel The RegisterViewModel instance to be used for the registration logic.
+ */
 @Composable
 fun RegisterScreen(
     modifier: Modifier = Modifier,
@@ -22,13 +32,19 @@ fun RegisterScreen(
     onNavigateToLogin: () -> Unit,
     viewModel: RegisterViewModel = viewModel()
 ) {
+    // Declare mutable state variables for email, password, and confirm password
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+
+    // Collect the isLoading and error states from the view model
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+
+    // Declare a mutable state variable to track the visibility of the password
     var isPasswordVisible by remember { mutableStateOf(false) }
 
+    // Render the registration screen
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -36,6 +52,7 @@ fun RegisterScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        // Display the "Register" title
         Text(
             text = "Register",
             style = MaterialTheme.typography.headlineMedium
@@ -43,6 +60,7 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Render the email input field
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -56,6 +74,7 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Render the password input field with a toggle for password visibility
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -82,6 +101,7 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Render the confirm password input field with the same password visibility toggle
         OutlinedTextField(
             value = confirmPassword,
             onValueChange = { confirmPassword = it },
@@ -97,6 +117,7 @@ fun RegisterScreen(
             }
         )
 
+        // Display any error messages
         if (error.isNotEmpty()) {
             Text(
                 text = error,
@@ -107,21 +128,27 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Render the registration button
         Button(
             onClick = {
+                // Check if the passwords match
                 if (password == confirmPassword) {
+                    // Call the register function from the view model
                     viewModel.register(email, password) { success ->
                         if (success) {
+                            // Call the onRegister callback if the registration is successful
                             onRegister(email, password)
                         }
                     }
                 } else {
+                    // Set an error message if the passwords don't match
                     viewModel.setError("Passwords do not match")
                 }
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = !isLoading
         ) {
+            // Display a loading indicator if the registration is in progress
             if (isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
@@ -132,6 +159,7 @@ fun RegisterScreen(
             }
         }
 
+        // Render the button to navigate to the login screen
         TextButton(
             onClick = onNavigateToLogin,
             modifier = Modifier.padding(top = 8.dp)
@@ -139,4 +167,4 @@ fun RegisterScreen(
             Text("Already have an account? Login")
         }
     }
-} 
+}

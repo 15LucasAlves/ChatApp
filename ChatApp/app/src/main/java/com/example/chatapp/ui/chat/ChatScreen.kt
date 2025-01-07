@@ -33,6 +33,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
+// The main composable function that represents the chat screen
 @Composable
 fun ChatScreen(
     modifier: Modifier = Modifier,
@@ -105,6 +106,7 @@ fun ChatScreen(
             )
         }
     ) { padding ->
+        // The main content of the chat screen
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -235,6 +237,7 @@ fun ChatScreen(
     }
 }
 
+// The top bar of the chat screen, including the search functionality
 @Composable
 fun ChatTopBar(
     recipientUser: User?,
@@ -305,11 +308,13 @@ fun ChatTopBar(
     )
 }
 
+// Helper function to format the date header for the message list
 fun formatDateHeader(date: String): String {
     val parsedDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(date)
     return SimpleDateFormat("EEE, MMM d", Locale.getDefault()).format(parsedDate ?: Date())
 }
 
+// Composable function for a single chat message item
 @Composable
 fun ChatMessageItem(
     message: Message,
@@ -419,6 +424,9 @@ fun ChatMessageItem(
     }
 }
 
+// This function is a Composable function that creates a bottom sheet for message actions.
+// It takes in a message, a boolean indicating if the message is the user's own message,
+// and three callback functions for dismissing the bottom sheet, deleting the message, and editing the message.
 @Composable
 fun MessageActionsBottomSheet(
     message: Message,
@@ -427,16 +435,19 @@ fun MessageActionsBottomSheet(
     onDelete: () -> Unit,
     onEdit: () -> Unit
 ) {
+    // Get the current context and the clipboard manager
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
 
+    // Create a modal bottom sheet with the provided onDismissRequest callback
     ModalBottomSheet(onDismissRequest = onDismiss) {
+        // Create a column to hold the list items
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // If it's my message AND there's text, allow "Edit"
+            // If the message is the user's own message and the message text is not empty, show the "Edit" option
             if (isOwnMessage && message.text.isNotEmpty()) {
                 ListItem(
                     headlineContent = { Text("Edit Message") },
@@ -447,7 +458,7 @@ fun MessageActionsBottomSheet(
                 )
             }
 
-            // Always allow "Delete" if it's my message
+            // If the message is the user's own message, show the "Delete" option
             if (isOwnMessage) {
                 ListItem(
                     headlineContent = { Text("Delete Message") },
@@ -458,15 +469,16 @@ fun MessageActionsBottomSheet(
                 )
             }
 
-            // "Copy" only if there's text in the message
+            // If the message text is not empty, show the "Copy" option
             if (message.text.isNotEmpty()) {
                 ListItem(
                     headlineContent = { Text("Copy Text") },
                     leadingContent = { Icon(Icons.Default.ContentCopy, contentDescription = null) },
                     modifier = Modifier.clickable {
+                        // Copy the message text to the clipboard and show a toast
                         clipboardManager.setText(AnnotatedString(message.text))
                         Toast.makeText(context, "Copied to clipboard", Toast.LENGTH_SHORT).show()
-                        onDismiss() // close bottom sheet after copying
+                        onDismiss() // close the bottom sheet after copying
                     }
                 )
             }
@@ -474,6 +486,9 @@ fun MessageActionsBottomSheet(
     }
 }
 
+// This function is a Composable function that creates a message input UI.
+// It takes in the current message text, a boolean indicating if the user is editing the message,
+// and callback functions for changing the message text, sending the message, attaching a file, and the sending state.
 @Composable
 fun MessageInput(
     messageText: String,
@@ -483,16 +498,19 @@ fun MessageInput(
     onAttachClick: () -> Unit,
     isSending: Boolean
 ) {
+    // Create a row to hold the input UI elements
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Create an icon button for attaching a file, disabled while sending
         IconButton(onClick = onAttachClick, enabled = !isSending) {
             Icon(Icons.Default.AttachFile, contentDescription = "Attach")
         }
 
+        // Create a box to hold the text input field
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -503,12 +521,14 @@ fun MessageInput(
                 )
                 .padding(horizontal = 8.dp)
         ) {
+            // Create a scrollable column to hold the text input field
             val scrollState = rememberScrollState()
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(scrollState)
             ) {
+                // Create a text field for the message input, disabled while sending
                 TextField(
                     value = messageText,
                     onValueChange = onMessageChange,
@@ -527,8 +547,10 @@ fun MessageInput(
             }
         }
 
+        // Create a spacer between the text input and the send button
         Spacer(modifier = Modifier.width(8.dp))
 
+        // Create an icon button for sending the message, disabled while sending
         IconButton(
             onClick = onSendClick,
             enabled = !isSending // disable while sending to avoid duplicates

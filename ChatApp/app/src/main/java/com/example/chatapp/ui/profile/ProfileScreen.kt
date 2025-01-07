@@ -25,6 +25,8 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.chatapp.R
 
+// The ProfileScreen is a Composable function that represents the user's profile screen.
+// It allows the user to view and edit their profile information, including their profile picture, username, and email.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
@@ -37,29 +39,36 @@ fun ProfileScreen(
         key = if (isInitialSetup) "initialSetup" else "profile"
     )
 ) {
+    // State variables to manage the editing state, username, and selected profile image
     var isEditing by remember { mutableStateOf(isInitialSetup) }
     var username by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    // Collect the user state, loading state, and error state from the ViewModel
     val userState by viewModel.userState.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
+    // Create a launcher for the image picker
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         selectedImageUri = uri
     }
 
+    // Load the user's profile when the screen is first displayed
     LaunchedEffect(Unit) {
         viewModel.loadUserProfile(email)
     }
 
+    // Update the username state when the user's profile is loaded
     LaunchedEffect(userState) {
         userState?.let {
             username = it.username ?: ""
         }
     }
 
+    // Scaffold the profile screen with a top app bar
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -86,6 +95,7 @@ fun ProfileScreen(
             )
         }
     ) { padding ->
+        // The main content of the profile screen
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -99,12 +109,13 @@ fun ProfileScreen(
                 modifier = Modifier
                     .size(120.dp)
                     .clip(CircleShape)
-                    .clickable(enabled = isEditing) { 
+                    .clickable(enabled = isEditing) {
                         if (isEditing) {
                             imagePicker.launch("image/*")
                         }
                     }
             ) {
+                // Display the selected or default profile image
                 if (selectedImageUri != null || userState?.photoUrl != null) {
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
@@ -116,14 +127,8 @@ fun ProfileScreen(
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    val defaultProfileUrl =
-                        "https://firebasestorage.googleapis.com/v0/b/chatapp-e94d4.firebasestorage.app/o/profile_images%2Fdefault_user_profile_image.png?alt=media&token=f19d8620-dacc-438b-aa53-b47199d89640"
-                    // make sure the ?alt=media param is included so it returns the actual image
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(defaultProfileUrl)   // <-- fallback to your remote default
-                            .crossfade(true)
-                            .build(),
+                    Image(
+                        painter = painterResource(R.drawable.default_user),
                         contentDescription = "Default profile picture",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
@@ -131,6 +136,7 @@ fun ProfileScreen(
                 }
             }
 
+            // Display a message if the user is in editing mode
             if (isEditing) {
                 Text(
                     text = "Tap to change profile picture",
@@ -139,7 +145,7 @@ fun ProfileScreen(
                 )
             }
 
-            // Email (non-editable)
+            // Display the user's email (non-editable)
             Text(
                 text = "Email",
                 style = MaterialTheme.typography.titleMedium
@@ -149,7 +155,7 @@ fun ProfileScreen(
                 style = MaterialTheme.typography.bodyLarge
             )
 
-            // Username
+            // Display the user's username (editable)
             Text(
                 text = "Username",
                 style = MaterialTheme.typography.titleMedium
@@ -168,6 +174,7 @@ fun ProfileScreen(
                 )
             }
 
+            // Display any errors that occurred during the profile update
             if (error.isNotEmpty()) {
                 Text(
                     text = error,
@@ -176,6 +183,7 @@ fun ProfileScreen(
                 )
             }
 
+            // Display the "Save Changes" or "Complete Setup" button, depending on the state
             if (isEditing || isInitialSetup) {
                 Button(
                     onClick = {

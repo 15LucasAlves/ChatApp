@@ -10,15 +10,32 @@ import com.example.chatapp.R
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
+/**
+ * This class extends the FirebaseMessagingService and is responsible for handling
+ * Firebase Cloud Messaging (FCM) events, such as receiving new tokens and incoming messages.
+ */
 class FirebaseMessagingService : FirebaseMessagingService() {
 
+    /**
+     * This method is called when FCM provides a new token for the app.
+     * This typically happens when the app is reinstalled or the user clears the app's data.
+     * In this implementation, the new token is logged for debugging purposes.
+     * You may want to update your Firestore or ViewModel with the new token.
+     *
+     * @param token The new token provided by FCM.
+     */
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        // This is called when FCM gives you a new token (e.g. app reinstall, user cleared data)
-        // Typically you’d update Firestore here, or reuse your ViewModel approach
         Log.d("MyFirebaseMsgService", "Refreshed token: $token")
     }
 
+    /**
+     * This method is called when a new message is received from FCM.
+     * It checks if the message contains a notification payload and displays a notification
+     * to the user. If the message contains a data payload, you can handle it as needed.
+     *
+     * @param remoteMessage The RemoteMessage object containing the message data.
+     */
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
 
@@ -33,6 +50,15 @@ class FirebaseMessagingService : FirebaseMessagingService() {
         // val dataPayload = remoteMessage.data
     }
 
+    /**
+     * This private function is responsible for displaying a notification to the user.
+     * It creates a notification channel (for Android 8.0 and above) and builds the notification
+     * using the NotificationCompat.Builder. The notification is then displayed using the
+     * NotificationManagerCompat.
+     *
+     * @param title The title of the notification.
+     * @param body The body of the notification.
+     */
     private fun showNotification(title: String, body: String) {
         val channelId = "chat_notifications"
 

@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.ui.text.input.VisualTransformation
 
+// This is the LoginScreen composable function that represents the login screen UI.
 @Composable
 fun LoginScreen(
     modifier: Modifier = Modifier,
@@ -27,6 +28,7 @@ fun LoginScreen(
     loginViewModel: LoginViewModel = viewModel(),
     onNavigateToRegister: () -> Unit
 ) {
+    // Declare mutable state variables to hold the email, password, error, login result, and error message.
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var error by remember { mutableStateOf("") }
@@ -34,7 +36,7 @@ fun LoginScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var isPasswordVisible by remember { mutableStateOf(false) }
 
-
+    // Compose the login screen UI.
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -42,6 +44,7 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        // Display the "Login" text.
         Text(
             text = "Login",
             style = MaterialTheme.typography.headlineMedium
@@ -49,6 +52,7 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Display the email input field.
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -62,12 +66,13 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Display the password input field with a toggle for password visibility.
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("Password") },
             visualTransformation = if(isPasswordVisible){
-               VisualTransformation.None
+                VisualTransformation.None
             }else{
                 PasswordVisualTransformation()
             },
@@ -86,6 +91,7 @@ fun LoginScreen(
             }
         )
 
+        // Display the error message, if any.
         if (error.isNotEmpty()) {
             Text(
                 text = error,
@@ -96,19 +102,22 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Display the login button.
         Button(
             onClick = { onLogin(email, password, loginResult)
-                      loginViewModel.login(email, password, onSuccess = {
-                          loginResult = true
-                      }, onFailure = {
-                          errorMessage = "Authentication failed, incorrect email or password. Try Again."
-                          loginResult = false
-                      })
-                      },
+                loginViewModel.login(email, password, onSuccess = {
+                    loginResult = true
+                }, onFailure = {
+                    errorMessage = "Authentication failed, incorrect email or password. Try Again."
+                    loginResult = false
+                })
+            },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Login")
         }
+
+        // Display the error message, if any.
         if (errorMessage?.isNotEmpty() == true) {
             Text(
                 text = errorMessage!!,
@@ -116,6 +125,8 @@ fun LoginScreen(
                 modifier = Modifier.padding(top = 8.dp)
             )
         }
+
+        // Display the "Don't have an account? Register" button.
         TextButton(
             onClick = onNavigateToRegister,
             modifier = Modifier.padding(top = 8.dp)
@@ -123,4 +134,4 @@ fun LoginScreen(
             Text("Don't have an account? Register")
         }
     }
-} 
+}

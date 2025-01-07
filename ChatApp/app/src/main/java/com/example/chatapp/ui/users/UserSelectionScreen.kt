@@ -35,7 +35,6 @@ import coil.compose.rememberImagePainter
 import com.example.chatapp.data.model.Message
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-
 @Composable
 fun UserSelectionScreen(
     modifier: Modifier = Modifier,
@@ -45,20 +44,24 @@ fun UserSelectionScreen(
     chatViewModel: ChatViewModel = viewModel(),
     onNavigateToProfile: () -> Unit
 ) {
+    // Declare a mutable state variable to store the search query
     var searchQuery by remember { mutableStateOf("") }
+    // Collect the users and error state from the view model
     val users by viewModel.users.collectAsState()
     val error by viewModel.error.collectAsState()
 
+    // Load the users when the screen is first composed
     LaunchedEffect(Unit) {
         viewModel.loadUsers(currentUserEmail)
     }
 
+    // Compose the main content of the screen
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-
+        // Render a text field for searching users
         TextField(
             shape = MaterialTheme.shapes.medium,
             value = searchQuery,
@@ -78,6 +81,7 @@ fun UserSelectionScreen(
             )
         )
 
+        // Display an error message if there is one
         if (error.isNotEmpty()) {
             Text(
                 text = error,
@@ -86,19 +90,24 @@ fun UserSelectionScreen(
             )
         }
 
+        // Render a lazy column to display the list of users
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(vertical = 8.dp)
         ) {
             items(users) { user ->
-                UserItem(user = user, currentUserEmail, onClick = { onUserSelected(user.email)
+                // Render a user item for each user
+                UserItem(user = user, currentUserEmail, onClick = {
+                    onUserSelected(user.email)
                     chatViewModel.initChat(currentUserEmail, user.email)
                     chatViewModel.setRecipientEmail(user.email)
-                chatViewModel.setUserEmail(currentUserEmail) })
+                    chatViewModel.setUserEmail(currentUserEmail)
+                })
             }
         }
     }
-    //replaces top button for view profile with more lowkey button on left side of the screen on the bottom
+
+    // Render a floating action button to navigate to the user's profile
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -125,48 +134,51 @@ private fun UserItem(
     onClick: () -> Unit,
     viewModel: UserSelectionViewModel = viewModel(),
 ) {
+    // Create a MessageRepository instance
     val repository = MessageRepository()
+    // Get the chat ID for the current user and the given user
     val chatId = viewModel.chatId(currentUserEmail, user.email)
-    Log.d("userslec", "$chatId")
+    // Fetch the last message for the chat ID and collect the result as a state
     val messages = repository.fetchLastMessage(chatId).collectAsState(initial = Result.Loading)
 
+    // Render a card for the user item
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clickable(onClick = onClick),
-        shape = MaterialTheme.shapes.medium // Matches the card's border radius
+        shape = MaterialTheme.shapes.medium
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically // Align items vertically
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // User Image
+            // Render the user's profile image
             Box(
                 modifier = Modifier
-                    .size(64.dp) // Larger image size
-                    .clip(RoundedCornerShape(16.dp)) // Apply proper border radius
-                    .background(MaterialTheme.colorScheme.surface) // Optional: Add background color
+                    .size(64.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(MaterialTheme.colorScheme.surface)
             ) {
                 user.photoUrl?.let { imageUrl ->
                     Image(
                         painter = rememberAsyncImagePainter(imageUrl),
                         contentDescription = "Userpic",
-                        modifier = Modifier.fillMaxSize(), // Ensures image fits the container
-                        contentScale = ContentScale.Crop // Maintains aspect ratio while filling the container
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
                     )
                 } ?: Icon(
                     imageVector = Icons.Default.AccountCircle,
                     contentDescription = "Default User Icon",
-                    modifier = Modifier.fillMaxSize() // Ensures icon fits the container
+                    modifier = Modifier.fillMaxSize()
                 )
             }
 
-            Spacer(modifier = Modifier.width(16.dp)) // Space between image and text
+            Spacer(modifier = Modifier.width(16.dp))
 
-            // Texts
+            // Render the user's username and email, as well as the last message in the chat
             Column(
                 modifier = Modifier.fillMaxWidth()
             ) {
